@@ -1,0 +1,89 @@
+# Phase 0 infrastructure: PostgreSQL+pgvector, Redis, OpenSearch, MediaMTX.
+# Start:            docker compose --env-file .env -f infra/docker-compose.yml up -d
+# With fake cameras: add   --profile cameras
+name: surveillance
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-surveillance}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-surveillance}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-surveillance} -d ${POSTGRES_DB:-surveillance}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"        # local dev only
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      bootstrap.memory_lock: "true"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 65536, hard: 65536 }
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+    volumes:
+      - osdata:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    restart: unless-stopped
+    ports:
+      - "${RTSP_PORT:-8554}:8554"     # RTSP
+      - "${HLS_PORT:-8888}:8888"      # HLS (browser playback)
+      - "${WEBRTC_PORT:-8889}:8889"   # WebRTC
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
+
+  # Replays a video file forever as rtsp://localhost:8554/cam1
+  fake-cam-1:
+    profiles: ["cameras"]
+    image: linuxserver/ffmpeg:latest
+    restart: unless-stopped
+    depends_on: [mediamtx]
+    volumes:
+      - ../data/sample_videos:/videos:ro
+    entrypoint: ["ffmpeg"]
+    command: >
+      -hide_banner -loglevel warning -re -stream_loop -1
+      -i /videos/${FAKE_CAM_VIDEO:-sample.mp4}
+      -an -c:v libx264 -preset veryfast -tune zerolatency -pix_fmt yuv420p -g 30
+      -f rtsp -rtsp_transport tcp rtsp://mediamtx:8554/cam1
+
+volumes:
+  pgdata:
+  redisdata:
+  osdata:

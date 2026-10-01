@@ -1,0 +1,23 @@
+# data and models are never committed
+data/raw/*
+data/downloads/*
+data/sample_videos/*
+!data/**/.gitkeep
+*.pt
+*.onnx
+*.engine
+*.mp4
+# env and secrets
+.env
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# node
+node_modules/
+frontend/dist/
+# editors / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,11 @@
+# Minimal MediaMTX config: accept any published stream and serve it back.
+logLevel: info
+rtsp: yes
+rtspAddress: :8554
+hls: yes
+hlsAddress: :8888
+webrtc: yes
+webrtcAddress: :8889
+
+paths:
+  all_others:

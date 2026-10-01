@@ -1,0 +1,4 @@
+# Phase 0 tooling only. AI/backend dependencies are added in their own phases.
+pyyaml>=6.0
+pytest>=8.0
+psycopg[binary]>=3.1
