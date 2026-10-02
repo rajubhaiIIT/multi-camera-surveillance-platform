@@ -76,3 +76,72 @@ scripts/                 download_data.py, check_infra.py, fake_camera.sh
 eval/results.md          every metric you report
 docs/ethics.md           licenses, consent, privacy
 ```
+
+---
+
+# Phase 1: Detection and single-camera tracking
+
+YOLO11n + ByteTrack, a worker that reads an RTSP camera, and MOT17 evaluation (HOTA / IDF1 / MOTA).
+Commands below are PowerShell; run them from the repo root with the virtual environment active.
+
+## Phase 1 setup (GPU)
+`pip` on Windows installs the **CPU-only** PyTorch by default, so install a CUDA build first.
+Get the current command for your system from https://pytorch.org/get-started/locally/ (Stable, Windows, Pip, a CUDA version).
+At the time of writing it looks like:
+```powershell
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+python -m pip install -r requirements-ai.txt
+python scripts/check_gpu.py        # must print [ OK ] GPU: NVIDIA GeForce RTX 4060 ...
+```
+`requirements-ai.txt` installs TrackEval from GitHub, so `git` must be installed (it is, from the earlier step).
+If `check_gpu.py` says CUDA is not available, you got the CPU build: re-run the torch line above with `--force-reinstall`,
+and update your NVIDIA driver if it still fails. Everything also works on CPU, just slower.
+
+## 1. Watch tracking on your fake camera
+Make sure the fake camera is running (the compose command with `--profile cameras` from Phase 0), then:
+```powershell
+python -m ai.worker --camera-id cam1 --source rtsp://localhost:8554/cam1 --show
+```
+A window shows boxes and track IDs with an FPS counter. Press `q` to quit.
+`--show` needs the normal `opencv-python` package (not `-headless`), which `requirements-ai.txt` installs.
+The first run downloads `yolo11n.pt` (about 6 MB).
+
+Other useful options:
+```powershell
+# write the contract records to a file (one JSON object per line) and save an annotated video
+python -m ai.worker --source rtsp://localhost:8554/cam1 --jsonl out.jsonl --save-video out.mp4 --max-frames 300
+# run on a video file instead of a camera
+python -m ai.worker --source data/sample_videos/sample.mp4 --show
+```
+Each line of `out.jsonl` looks like:
+```json
+{"camera_id": "cam1", "frame_ts": 1759400000.12, "frame_idx": 41, "track_id": 7, "bbox": [412.0, 220.5, 470.2, 380.1], "class": "person", "conf": 0.8731}
+```
+`track_id` is unique within one camera only. Cross-camera IDs arrive in Phase 2.
+
+## 2. Measure it: MOT17 tracking metrics
+```powershell
+python eval/run_mot17.py --run-name yolo11n_1280 --imgsz 1280     # runs 7 sequences, writes result files
+python eval/eval_mot17.py --run-name yolo11n_1280                 # HOTA, IDF1, MOTA, ID switches
+python eval/run_mot17.py --run-name yolo11n_640 --imgsz 640       # a second run to compare speed vs accuracy
+python eval/eval_mot17.py --run-name yolo11n_640
+```
+Each `eval_mot17.py` run prints a ready-made row; paste it into `eval/results.md`.
+Results and run settings are saved under `eval/runs/<run-name>/` (`metrics.json`, `run_meta.json`).
+
+Optional detection benchmark (downloads COCO val, about 1 GB): `python eval/eval_coco_detection.py`
+
+## 3. Tests
+```powershell
+pytest                  # offline: contract, MOT format, worker, TrackEval scoring checks
+pytest -m model         # real YOLO on real frames (downloads yolo11n.pt; needs MOT17 for the full check)
+pytest -m infra         # services + fake camera from Phase 0
+```
+
+## Phase 1 exit checklist
+- [ ] `check_gpu.py` shows your RTX 4060
+- [ ] `python -m ai.worker ... --show` displays stable IDs on the fake camera
+- [ ] `eval/runs/yolo11n_1280/metrics.json` exists and the row is in `eval/results.md`
+- [ ] Worker FPS on one stream is 15+ (the console prints it; the MOT17 run also reports FPS)
+- [ ] `pytest` and `pytest -m model` pass
+- [ ] Committed and pushed

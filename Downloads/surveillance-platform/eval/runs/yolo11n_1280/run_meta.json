@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-03",
+  "weights": "yolo11n.pt",
+  "imgsz": 1280,
+  "conf": 0.1,
+  "detector_variant": "SDP",
+  "device": "cuda:0",
+  "fp16": true,
+  "classes": "person only",
+  "tracker": "ByteTrack (ultralytics bytetrack.yaml, default params)",
+  "overall_fps_incl_image_read": 32.2,
+  "frames": 5316,
+  "per_sequence": {
+    "MOT17-02-SDP": {
+      "frames": 600,
+      "seconds": 19.67,
+      "fps": 30.5
+    },
+    "MOT17-04-SDP": {
+      "frames": 1050,
+      "seconds": 35.39,
+      "fps": 29.7
+    },
+    "MOT17-05-SDP": {
+      "frames": 837,
+      "seconds": 20.5,
+      "fps": 40.8
+    },
+    "MOT17-09-SDP": {
+      "frames": 525,
+      "seconds": 16.44,
+      "fps": 31.9
+    },
+    "MOT17-10-SDP": {
+      "frames": 654,
+      "seconds": 20.48,
+      "fps": 31.9
+    },
+    "MOT17-11-SDP": {
+      "frames": 900,
+      "seconds": 29.05,
+      "fps": 31.0
+    },
+    "MOT17-13-SDP": {
+      "frames": 750,
+      "seconds": 23.43,
+      "fps": 32.0
+    }
+  },
+  "python": "3.12.10",
+  "torch": "2.14.1+cu126",
+  "ultralytics": "8.4.171",
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+}

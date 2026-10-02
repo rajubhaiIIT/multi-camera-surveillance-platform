@@ -1,0 +1,9 @@
+# Phase 1+ AI dependencies.
+# Install a CUDA build of torch FIRST (see README), otherwise Windows gets the CPU-only one.
+numpy
+scipy
+opencv-python>=4.9
+ultralytics>=8.3
+lap>=0.5.12        # ByteTrack needs it (if it fails to install on Windows, use: lapx)
+# TrackEval (HOTA/IDF1/MOTA) is not on PyPI; needs git installed.
+trackeval @ git+https://github.com/JonathonLuiten/TrackEval.git
