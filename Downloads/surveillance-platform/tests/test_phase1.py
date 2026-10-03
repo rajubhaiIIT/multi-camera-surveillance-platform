@@ -28,7 +28,8 @@ def rec(**kw):
 # ---------- contract ----------
 def test_record_dict_has_the_agreed_keys():
     d = rec().to_dict()
-    assert set(d) == {"camera_id", "frame_ts", "frame_idx", "track_id", "bbox", "class", "conf"}
+    assert set(d) == {"camera_id", "frame_ts", "frame_idx", "track_id", "bbox", "class", "conf", "global_id"}
+    assert d["global_id"] is None
     assert d["bbox"] == [10.0, 20.0, 50.0, 90.0] and d["class"] == "person"
 
 

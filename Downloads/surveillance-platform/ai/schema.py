@@ -17,6 +17,7 @@ class TrackRecord:
     bbox: tuple          # (x1, y1, x2, y2) in pixels
     cls: str             # class name, e.g. "person", "car"
     conf: float          # detector confidence, 0..1
+    global_id: int | None = None   # cross-camera identity (Phase 2); None = not matched yet / not a person
 
     def __post_init__(self):
         if not isinstance(self.camera_id, str) or not self.camera_id:
@@ -36,6 +37,8 @@ class TrackRecord:
             raise ValueError("cls must be a non-empty string")
         if not (0.0 <= self.conf <= 1.0):
             raise ValueError("conf must be within 0..1")
+        if self.global_id is not None and not (isinstance(self.global_id, int) and self.global_id >= 0):
+            raise ValueError("global_id must be None or a non-negative int")
 
     def to_dict(self) -> dict:
         return {
@@ -46,9 +49,10 @@ class TrackRecord:
             "bbox": [round(float(v), 1) for v in self.bbox],
             "class": self.cls,
             "conf": round(float(self.conf), 4),
+            "global_id": self.global_id,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "TrackRecord":
         return cls(d["camera_id"], d["frame_ts"], d["frame_idx"], d["track_id"],
-                   tuple(d["bbox"]), d["class"], d["conf"])
+                   tuple(d["bbox"]), d["class"], d["conf"], d.get("global_id"))

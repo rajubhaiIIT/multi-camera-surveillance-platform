@@ -145,3 +145,78 @@ pytest -m infra         # services + fake camera from Phase 0
 - [ ] Worker FPS on one stream is 15+ (the console prints it; the MOT17 run also reports FPS)
 - [ ] `pytest` and `pytest -m model` pass
 - [ ] Committed and pushed
+
+
+---
+
+# Phase 2 (part A): Person Re-ID, cross-camera matching, database
+
+What is built: a Re-ID model you train on Market-1501, an embedder (PyTorch or ONNX), a cross-camera matcher
+that gives the same person one global ID, a multi-camera pipeline step, cross-camera scoring, and pgvector storage.
+Still to come (part B): the WILDTRACK adapter and your own multi-camera recording.
+
+**Model choice:** ResNet50 + BNNeck (the "bag of tricks" Re-ID baseline) with ImageNet weights, not OSNet.
+The OSNet code library (torchreid) did not install cleanly, and it needs a C compiler on Windows.
+`--backbone resnet18` is the lighter option if you need speed.
+
+## 1. Get Market-1501
+Download it from Kaggle or Hugging Face in your browser (search "Market-1501"), save it as `data\downloads\market1501.zip`, then:
+```powershell
+python scripts/download_data.py fetch market1501
+```
+It must show `[OK] market1501`. (It is about 150 MB.)
+
+## 2. Install the extra packages
+```powershell
+python -m pip install -r requirements-ai.txt
+```
+
+## 3. Train (on your own RTX 4060)
+First a 2-epoch trial, to check it runs and to see how long one epoch takes:
+```powershell
+python -m ai.reid.train --data data/raw/market1501 --epochs 2 --eval-every 1 --out models/reid/trial
+```
+If it runs out of GPU memory, add `--p 8`. If it errors about downloading weights, check your internet (it fetches ImageNet weights once).
+Then the full run (60 epochs; multiply the epoch time from the trial to estimate it):
+```powershell
+python -m ai.reid.train --data data/raw/market1501 --out models/reid/resnet50_market
+```
+It writes `best.pt`, `last.pt`, `metrics.json` (Rank-1, mAP, a suggested similarity threshold), and `history.json`.
+No local GPU time? The same command works in a Kaggle notebook with GPU on (upload the project folder and the Market-1501 data as datasets).
+
+## 4. Measure
+```powershell
+python -m ai.reid.eval_market --ckpt models/reid/resnet50_market/best.pt --data data/raw/market1501 --out eval/runs/reid_market.json
+```
+Paste Rank-1 and mAP into `eval/results.md`. The printout also contains `threshold_suggestion`: a starting value for
+`sim_threshold` in `ai/crosscam.py`. It is tuned on Market-1501 only, so re-tune it on your own recording.
+
+## 5. Export to ONNX (optional, for faster serving)
+```powershell
+python -m ai.reid.export --ckpt models/reid/resnet50_market/best.pt --out models/reid/reid.onnx
+```
+
+## 6. Database
+```powershell
+python scripts/init_db.py              # creates the two tables (safe to repeat)
+pytest -m infra -k store               # saves, searches and orders trajectories against your real Postgres
+```
+
+## 7. Tests
+```powershell
+pytest                                  # offline: Re-ID data/model/metrics, matcher rules, multi-camera pipeline, scoring
+```
+
+## How the matcher decides (so you can explain it)
+1. Each person track collects crops, and their embeddings are averaged into one appearance "fingerprint".
+2. The fingerprint is compared with every known identity (cosine similarity).
+3. Impossible matches are removed: the identity is already visible in this camera, is visible in a different
+   camera right now, or last appeared too recently or too long ago for the walk between the cameras (`Topology`).
+4. All waiting tracks are matched together (Hungarian algorithm), so two people can't take the same identity.
+   If nothing is similar enough, a new global identity starts.
+
+## Phase 2 part A exit checklist
+- [ ] `fetch market1501` shows OK
+- [ ] Full training finished; `eval_market` printed Rank-1 and mAP, and the row is in `eval/results.md`
+- [ ] `pytest` passes and `pytest -m infra -k store` passes
+- [ ] Committed and pushed
