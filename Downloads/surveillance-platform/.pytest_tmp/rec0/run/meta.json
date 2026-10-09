@@ -1,0 +1,24 @@
+{
+  "created": "2026-10-05T05:48:30",
+  "stride": 2,
+  "cameras": {
+    "cam1": {
+      "video": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\rec0\\cam1.mp4",
+      "offset": 0.0,
+      "fps": 10.0,
+      "stride": 2,
+      "frames_total": 100,
+      "last_idx": 98,
+      "frames_processed": 50
+    },
+    "cam2": {
+      "video": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\rec0\\cam2.mp4",
+      "offset": 30.0,
+      "fps": 10.0,
+      "stride": 2,
+      "frames_total": 100,
+      "last_idx": 98,
+      "frames_processed": 50
+    }
+  }
+}

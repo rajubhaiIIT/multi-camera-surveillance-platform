@@ -1,0 +1,108 @@
+{
+  "total": {
+    "gt_boxes": 40,
+    "AP50": 0.0,
+    "AP50_95": 0.0,
+    "AP50_ignoring_outside_area": 0.0,
+    "recall_at_conf": 0.0,
+    "precision_at_conf": 0.0,
+    "precision_ignoring_outside_area": 0.0,
+    "boxes_at_conf": 30,
+    "recall_by_person_height": {
+      "small_lt60px": {
+        "gt": 0,
+        "recall": null
+      },
+      "medium_60_120px": {
+        "gt": 0,
+        "recall": null
+      },
+      "large_gt120px": {
+        "gt": 40,
+        "recall": 0.0
+      }
+    }
+  },
+  "cameras": {
+    "C1": {
+      "gt_boxes": 10,
+      "AP50": 0.0,
+      "AP50_95": 0.0,
+      "AP50_ignoring_outside_area": 0.0,
+      "recall_at_conf": 0.0,
+      "precision_at_conf": 0.0,
+      "precision_ignoring_outside_area": 0.0,
+      "boxes_at_conf": 10,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 10,
+          "recall": 0.0
+        }
+      }
+    },
+    "C2": {
+      "gt_boxes": 20,
+      "AP50": 0.0,
+      "AP50_95": 0.0,
+      "AP50_ignoring_outside_area": 0.0,
+      "recall_at_conf": 0.0,
+      "precision_at_conf": 0.0,
+      "precision_ignoring_outside_area": null,
+      "boxes_at_conf": 10,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 20,
+          "recall": 0.0
+        }
+      }
+    },
+    "C3": {
+      "gt_boxes": 10,
+      "AP50": 0.0,
+      "AP50_95": 0.0,
+      "AP50_ignoring_outside_area": 0.0,
+      "recall_at_conf": 0.0,
+      "precision_at_conf": 0.0,
+      "precision_ignoring_outside_area": 0.0,
+      "boxes_at_conf": 10,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 10,
+          "recall": 0.0
+        }
+      }
+    }
+  },
+  "images": 30,
+  "seconds": 0.0,
+  "images_per_second": null,
+  "conf_for_recall_precision": 0.25,
+  "weights": "a.pt",
+  "imgsz": 1280,
+  "device": "cpu",
+  "frames_per_camera": 10
+}

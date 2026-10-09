@@ -1,0 +1,13 @@
+{
+  "bounding_box_train": 10,
+  "query": 4,
+  "bounding_box_test": 16,
+  "test_people": 2,
+  "train_people": 2,
+  "test_frames": 5,
+  "train_stride": 1,
+  "test_pids": [
+    1,
+    2
+  ]
+}

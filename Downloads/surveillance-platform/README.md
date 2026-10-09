@@ -1,222 +1,254 @@
 # Intelligent Multi-Camera Surveillance Platform
 
-Phase 0: infrastructure, dataset access, and a fake RTSP camera.
+A multi-camera person-tracking system that gives the same person the same ID across different cameras, raises alerts for events such as falls, fights and weapons, and lets an operator search the history through a web dashboard. Built entirely from free software and public datasets, with every result measured and reproducible.
 
-## Prerequisites
-- Docker Desktop (or Docker Engine + Compose v2)
-- Python 3.10+
-- `ffmpeg` on your PATH (only for making/probing sample videos)
-- `make` (Windows: use WSL, or run the commands inside the Makefile directly)
+## Quick start (Phase 0 infrastructure)
 
-## Quick start
-```bash
-python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+**Prerequisites:** Docker Desktop, Python 3.10+, ffmpeg, git, make (or use the PowerShell equivalents below).
 
-make env            # creates .env  -> open it and change POSTGRES_PASSWORD
-make up             # postgres+pgvector, redis, opensearch, mediamtx
-make check          # every service must print [ OK ]
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env        # edit POSTGRES_PASSWORD before continuing
+docker compose --env-file .env -f infra/docker-compose.yml up -d
+python scripts/check_infra.py      # all four services must show [ OK ]
 ```
 
-### OpenSearch fails to start? (Linux / WSL2)
-OpenSearch needs a higher memory-map limit:
+If OpenSearch fails on Linux or WSL2:
 ```bash
 sudo sysctl -w vm.max_map_count=262144
 ```
-On Docker Desktop with WSL2 run this inside the WSL distro (`wsl -d docker-desktop` if needed).
-The compose file caps its heap at 512 MB, so a laptop with 8 GB RAM is enough.
-
-## Datasets
-```bash
-python scripts/download_data.py list      # what exists and how to get it
-make data                                 # auto-download + extract what it can
-make data-verify                          # OK / MISSING per dataset
-```
-- **Automatic:** MOT17 and LFW.
-- **Manual (no approval forms):** Market-1501, CUHK03, RWF-2000, UR Fall, WILDTRACK, a weapon set.
-  Download in your browser, save the archive as `data/downloads/<name>.zip` (for example `market1501.zip`),
-  then run `make data` again. It extracts and verifies for you.
-- Links on research sites move. If an automatic download fails the script tells you and prints the manual steps.
-- Record each dataset's license in `docs/ethics.md`.
-
-## Fake camera
-1. Make a video. Either drop any `.mp4` at `data/sample_videos/sample.mp4`, or build one from MOT17:
-   ```bash
-   make mot-video                 # uses MOT17-04-SDP; change with: make mot-video SEQ=MOT17-09-SDP
-   ```
-   (If your MOT17 folder layout differs, adjust the path in the Makefile.)
-2. Start the camera:
-   ```bash
-   make up-cams
-   make check                     # then:
-   python scripts/check_infra.py --stream cam1
-   ```
-3. Watch it: `ffplay rtsp://localhost:8554/cam1` (or open it in VLC). Browser view: `http://localhost:8888/cam1`.
-
-More cameras without Docker: `scripts/fake_camera.sh data/sample_videos/other.mp4 cam2`
-
-## Tests
-```bash
-make test           # offline: config checks, dataset registry, safe extraction
-make test-infra     # needs `make up` (and `make up-cams` + sample.mp4 for the stream test)
-```
-
-## Phase 0 exit checklist
-- [ ] `make up` then `make check` shows 4x `[ OK ]` (Postgres reports pgvector)
-- [ ] `python scripts/check_infra.py --stream cam1` succeeds, and the looped video plays in VLC/ffplay
-- [ ] `make data-verify` shows at least MOT17 and Market-1501 as OK (the rest can finish during Phase 1-2)
-- [ ] `make test` and `make test-infra` pass
-- [ ] First commit pushed to GitHub (`.env` and `data/` are git-ignored)
-
-## Layout
-```
-ai/ backend/ frontend/   filled in from Phase 1 onward
-infra/                   docker-compose, MediaMTX, Postgres init, nginx (Phase 9)
-scripts/                 download_data.py, check_infra.py, fake_camera.sh
-eval/results.md          every metric you report
-docs/ethics.md           licenses, consent, privacy
-```
 
 ---
 
-# Phase 1: Detection and single-camera tracking
+## Phase 1: Detection and single-camera tracking
 
 YOLO11n + ByteTrack, a worker that reads an RTSP camera, and MOT17 evaluation (HOTA / IDF1 / MOTA).
-Commands below are PowerShell; run them from the repo root with the virtual environment active.
 
-## Phase 1 setup (GPU)
-`pip` on Windows installs the **CPU-only** PyTorch by default, so install a CUDA build first.
-Get the current command for your system from https://pytorch.org/get-started/locally/ (Stable, Windows, Pip, a CUDA version).
-At the time of writing it looks like:
+### Setup (GPU)
+
+Install a CUDA build of PyTorch first, then the AI requirements:
 ```powershell
 python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 python -m pip install -r requirements-ai.txt
-python scripts/check_gpu.py        # must print [ OK ] GPU: NVIDIA GeForce RTX 4060 ...
+python scripts/check_gpu.py        # must show [ OK ] GPU: NVIDIA GeForce RTX 4060
 ```
-`requirements-ai.txt` installs TrackEval from GitHub, so `git` must be installed (it is, from the earlier step).
-If `check_gpu.py` says CUDA is not available, you got the CPU build: re-run the torch line above with `--force-reinstall`,
-and update your NVIDIA driver if it still fails. Everything also works on CPU, just slower.
+If `lap` fails to install, change it to `lapx` in `requirements-ai.txt` and retry.
 
-## 1. Watch tracking on your fake camera
-Make sure the fake camera is running (the compose command with `--profile cameras` from Phase 0), then:
+### Watch tracking on your fake camera
+
+Make sure the camera container is running:
 ```powershell
+docker compose --env-file .env -f infra/docker-compose.yml --profile cameras up -d
 python -m ai.worker --camera-id cam1 --source rtsp://localhost:8554/cam1 --show
 ```
-A window shows boxes and track IDs with an FPS counter. Press `q` to quit.
-`--show` needs the normal `opencv-python` package (not `-headless`), which `requirements-ai.txt` installs.
-The first run downloads `yolo11n.pt` (about 6 MB).
+Press `q` to quit. The console prints `device=cuda:0` and an FPS counter.
 
-Other useful options:
+### MOT17 evaluation
 ```powershell
-# write the contract records to a file (one JSON object per line) and save an annotated video
-python -m ai.worker --source rtsp://localhost:8554/cam1 --jsonl out.jsonl --save-video out.mp4 --max-frames 300
-# run on a video file instead of a camera
-python -m ai.worker --source data/sample_videos/sample.mp4 --show
-```
-Each line of `out.jsonl` looks like:
-```json
-{"camera_id": "cam1", "frame_ts": 1759400000.12, "frame_idx": 41, "track_id": 7, "bbox": [412.0, 220.5, 470.2, 380.1], "class": "person", "conf": 0.8731}
-```
-`track_id` is unique within one camera only. Cross-camera IDs arrive in Phase 2.
-
-## 2. Measure it: MOT17 tracking metrics
-```powershell
-python eval/run_mot17.py --run-name yolo11n_1280 --imgsz 1280     # runs 7 sequences, writes result files
-python eval/eval_mot17.py --run-name yolo11n_1280                 # HOTA, IDF1, MOTA, ID switches
-python eval/run_mot17.py --run-name yolo11n_640 --imgsz 640       # a second run to compare speed vs accuracy
-python eval/eval_mot17.py --run-name yolo11n_640
-```
-Each `eval_mot17.py` run prints a ready-made row; paste it into `eval/results.md`.
-Results and run settings are saved under `eval/runs/<run-name>/` (`metrics.json`, `run_meta.json`).
-
-Optional detection benchmark (downloads COCO val, about 1 GB): `python eval/eval_coco_detection.py`
-
-## 3. Tests
-```powershell
-pytest                  # offline: contract, MOT format, worker, TrackEval scoring checks
-pytest -m model         # real YOLO on real frames (downloads yolo11n.pt; needs MOT17 for the full check)
-pytest -m infra         # services + fake camera from Phase 0
+python eval/run_mot17.py --run-name yolo11n_1280 --imgsz 1280
+python eval/eval_mot17.py --run-name yolo11n_1280
 ```
 
-## Phase 1 exit checklist
-- [ ] `check_gpu.py` shows your RTX 4060
-- [ ] `python -m ai.worker ... --show` displays stable IDs on the fake camera
-- [ ] `eval/runs/yolo11n_1280/metrics.json` exists and the row is in `eval/results.md`
-- [ ] Worker FPS on one stream is 15+ (the console prints it; the MOT17 run also reports FPS)
-- [ ] `pytest` and `pytest -m model` pass
-- [ ] Committed and pushed
+### Phase 1 results
 
+| Metric | Value | Setup |
+|---|---|---|
+| HOTA / IDF1 / MOTA | 41.4 / 48.2 / 42.5 (IDSW 914) | YOLO11n COCO-pretrained, imgsz 1280, conf 0.1, FP16 |
+| Speed | 32.2 FPS | RTX 4060 Laptop, 1080p images including read |
 
 ---
 
-# Phase 2 (part A): Person Re-ID, cross-camera matching, database
+## Phase 2: Person Re-ID and multi-camera tracking
 
-What is built: a Re-ID model you train on Market-1501, an embedder (PyTorch or ONNX), a cross-camera matcher
-that gives the same person one global ID, a multi-camera pipeline step, cross-camera scoring, and pgvector storage.
-Still to come (part B): the WILDTRACK adapter and your own multi-camera recording.
+### Part A: Train the Re-ID model on Market-1501
 
-**Model choice:** ResNet50 + BNNeck (the "bag of tricks" Re-ID baseline) with ImageNet weights, not OSNet.
-The OSNet code library (torchreid) did not install cleanly, and it needs a C compiler on Windows.
-`--backbone resnet18` is the lighter option if you need speed.
-
-## 1. Get Market-1501
-Download it from Kaggle or Hugging Face in your browser (search "Market-1501"), save it as `data\downloads\market1501.zip`, then:
 ```powershell
+# get Market-1501 from Kaggle or Hugging Face, save as data\downloads\market1501.zip, then:
 python scripts/download_data.py fetch market1501
-```
-It must show `[OK] market1501`. (It is about 150 MB.)
 
-## 2. Install the extra packages
-```powershell
-python -m pip install -r requirements-ai.txt
-```
-
-## 3. Train (on your own RTX 4060)
-First a 2-epoch trial, to check it runs and to see how long one epoch takes:
-```powershell
+# quick 2-epoch trial first (about 1 minute)
 python -m ai.reid.train --data data/raw/market1501 --epochs 2 --eval-every 1 --out models/reid/trial
-```
-If it runs out of GPU memory, add `--p 8`. If it errors about downloading weights, check your internet (it fetches ImageNet weights once).
-Then the full run (60 epochs; multiply the epoch time from the trial to estimate it):
-```powershell
+
+# full training (about 35 minutes on RTX 4060)
 python -m ai.reid.train --data data/raw/market1501 --out models/reid/resnet50_market
-```
-It writes `best.pt`, `last.pt`, `metrics.json` (Rank-1, mAP, a suggested similarity threshold), and `history.json`.
-No local GPU time? The same command works in a Kaggle notebook with GPU on (upload the project folder and the Market-1501 data as datasets).
 
-## 4. Measure
-```powershell
+# evaluate
 python -m ai.reid.eval_market --ckpt models/reid/resnet50_market/best.pt --data data/raw/market1501 --out eval/runs/reid_market.json
-```
-Paste Rank-1 and mAP into `eval/results.md`. The printout also contains `threshold_suggestion`: a starting value for
-`sim_threshold` in `ai/crosscam.py`. It is tuned on Market-1501 only, so re-tune it on your own recording.
 
-## 5. Export to ONNX (optional, for faster serving)
-```powershell
+# export to ONNX (optional)
 python -m ai.reid.export --ckpt models/reid/resnet50_market/best.pt --out models/reid/reid.onnx
 ```
 
-## 6. Database
+### Part A results
+
+| Dataset | Rank-1 | Rank-5 | mAP | Setup |
+|---|---|---|---|---|
+| Market-1501 (trained here) | 93.7% | 97.5% | 82.5% | ResNet50 + BNNeck, 512-d, 60 epochs, ImageNet init |
+| CUHK03 cross-dataset (never seen) | 77.9% | 97.4% | 58.8% | same model, tested on CUHK03 new protocol (detected boxes) |
+
+The 15.8-point drop from Market to CUHK03 is the **domain gap**: the model loses confidence when it moves to cameras and lighting it was never trained on. This directly explains why cross-camera matching on WILDTRACK is weak.
+
+### Part A: database setup
 ```powershell
-python scripts/init_db.py              # creates the two tables (safe to repeat)
-pytest -m infra -k store               # saves, searches and orders trajectories against your real Postgres
+python scripts/init_db.py              # creates the two pgvector tables (safe to repeat)
+pytest -m infra -k store               # database smoke test
 ```
 
-## 7. Tests
+### Part B: multi-camera recording tools
+
+**Your own recording** (2-3 phones, 3-5 consenting friends, read `docs/recording_guide.md` first):
 ```powershell
-pytest                                  # offline: Re-ID data/model/metrics, matcher rules, multi-camera pipeline, scoring
+python -m ai.recording sync  cam1=a.mp4 cam2=b.mp4 --out data/rec01/offsets.json
+python -m ai.recording extract --video cam1=a.mp4 --video cam2=b.mp4 --offsets data/rec01/offsets.json --out data/rec01/run --max-seconds 30
+# open data/rec01/run/sheets/, fill the person column of labels.csv, then:
+python -m ai.recording score data/rec01/run --render
+python -m ai.recording sweep data/rec01/run
 ```
 
-## How the matcher decides (so you can explain it)
-1. Each person track collects crops, and their embeddings are averaged into one appearance "fingerprint".
-2. The fingerprint is compared with every known identity (cosine similarity).
-3. Impossible matches are removed: the identity is already visible in this camera, is visible in a different
-   camera right now, or last appeared too recently or too long ago for the walk between the cameras (`Topology`).
-4. All waiting tracks are matched together (Hungarian algorithm), so two people can't take the same identity.
-   If nothing is similar enough, a new global identity starts.
+**WILDTRACK public dataset** (7 cameras, ground truth included, no labeling, about 7 GB):
+```powershell
+python scripts/download_data.py fetch wildtrack
+python -m ai.recording wildtrack --root data/raw/wildtrack/Wildtrack_dataset --out runs/wt --max-frames 50
+python -m ai.recording score runs/wt --stale-after 6 --render
+python -m ai.recording sweep runs/wt --stale-after 6
+```
 
-## Phase 2 part A exit checklist
-- [ ] `fetch market1501` shows OK
-- [ ] Full training finished; `eval_market` printed Rank-1 and mAP, and the row is in `eval/results.md`
-- [ ] `pytest` passes and `pytest -m infra -k store` passes
-- [ ] Committed and pushed
+### Part B: diagnosis tools
+```powershell
+# detector only (no tracker, no Re-ID): AP50, AP50-95, recall by person size
+python -m ai.recording detect-eval --root data/raw/wildtrack/Wildtrack_dataset --weights yolo11n.pt rtdetr-l.pt --imgsz 1280 --max-frames 50
+
+# detection-only diagnosis from an existing run
+python -m ai.recording diagnose runs/wt
+
+# oracle: feed ground-truth boxes to test Re-ID and matching alone
+python -m ai.recording wildtrack --root data/raw/wildtrack/Wildtrack_dataset --out runs/wt_oracle --max-frames 50 --oracle
+python -m ai.recording score runs/wt_oracle --stale-after 6
+
+# measure the Re-ID domain gap on WILDTRACK
+python -m ai.recording export-reid --root data/raw/wildtrack/Wildtrack_dataset --out data/wt_reid
+python -m ai.reid.eval_market --ckpt models/reid/resnet50_market/best.pt --data data/wt_reid
+python -m ai.reid.train --data data/wt_reid --init-ckpt models/reid/resnet50_market/best.pt --lr 1e-4 --epochs 20 --out models/reid/resnet50_wt
+```
+
+### Part B results
+
+| Experiment | IDF1 | HOTA | Key detail |
+|---|---|---|---|
+| WILDTRACK, 3 detectors (50 frames) | 8.6 – 11.0 | 9.6 – 10.9 | YOLO11n / YOLO11m / YOLOv8n-CrowdHuman, real detector |
+| WILDTRACK oracle (perfect boxes) | 36.3 | 46.2 | Ground-truth boxes + per-camera IDs, tests Re-ID and matcher only |
+
+**Detection only on WILDTRACK (AP50, imgsz 1280, no tracker):**
+
+| Model | AP50 | AP50-95 | Recall | Precision |
+|---|---|---|---|---|
+| YOLO11n | 33.8 | 10.2 | 59.4% | 26.5% |
+| YOLO11x | 32.3 | 9.6 | 61.7% | 25.6% |
+| RT-DETR-L | 28.0 | 7.9 | 53.0% | 23.2% |
+
+All three models are COCO-pretrained and score similarly, so switching COCO models is not the fix.
+
+**What the evidence says:**
+- Detection costs about 25 IDF1 points (from 36 with oracle to about 11 with real detectors).
+- Even with perfect boxes the oracle reaches only 36.3 IDF1, so Re-ID and matching are also a bottleneck (AssA 21.6).
+- The domain gap (Market → CUHK03 drop, and the tiny similarity gap in the threshold suggestion) explains why the matcher struggles on WILDTRACK.
+
+---
+
+## CUHK03 cross-dataset converter
+```powershell
+python scripts/convert_cuhk03.py --data data/raw/cuhk03 --out data/raw/cuhk03_market
+python -m ai.reid.eval_market --ckpt models/reid/resnet50_market/best.pt --data data/raw/cuhk03_market
+```
+
+---
+
+## Datasets
+
+```powershell
+python scripts/download_data.py list      # all datasets and how to get them
+python scripts/download_data.py fetch mot17 lfw
+python scripts/download_data.py verify
+```
+
+| Dataset | Used for | Method |
+|---|---|---|
+| MOT17 | Phase 1 tracking evaluation | Auto-download (~5 GB) |
+| Market-1501 | Re-ID training and test | Manual: Kaggle/Hugging Face, save as data/downloads/market1501.zip |
+| CUHK03 | Cross-dataset Re-ID test | Manual: Kaggle, save as data/downloads/cuhk03.zip |
+| LFW | Face recognition (Phase 3) | Auto-download (~170 MB, link may have moved) |
+| WILDTRACK | Multi-camera tracking | Auto-download (~7 GB, needs ~14 GB free while extracting) |
+
+---
+
+## Tests
+```powershell
+pytest                    # 99+ offline tests
+pytest -m infra           # needs docker compose up
+pytest -m model           # downloads weights, needs MOT17
+pytest --basetemp=.pytest_tmp   # use if you see an access-denied error
+```
+
+Add `--basetemp=.pytest_tmp` to the `addopts` line in `pytest.ini` to make it permanent.
+
+---
+
+## Project layout
+
+```
+ai/                   detection, tracking, Re-ID, embedder, cross-camera matcher,
+                      recording tools, WILDTRACK loader, diagnosis, sync
+backend/              FastAPI app (Phase 7, not built yet)
+frontend/             React dashboard (Phase 8, not built yet)
+infra/                docker-compose, Postgres init SQL, MediaMTX, Nginx
+eval/                 evaluation scripts and results
+  results.md          every metric with its settings
+  run_mot17.py        runs YOLO+ByteTrack on MOT17 sequences
+  eval_mot17.py       scores the result with TrackEval
+  eval_coco_detection.py   detection mAP on COCO val
+scripts/              download_data.py, check_infra.py, check_gpu.py,
+                      init_db.py, convert_cuhk03.py, fake_camera.sh
+tests/                test_phase0.py, test_phase1.py, test_phase2.py,
+                      test_phase2b.py, test_wildtrack.py
+docs/                 recording_guide.md, ethics.md
+data/
+  downloads/          archive files (git-ignored)
+  raw/                extracted datasets (git-ignored)
+  sample_videos/      fake camera input (git-ignored)
+models/
+  reid/               .pt and .onnx checkpoints (git-ignored)
+runs/                 recording and tracking run outputs (git-ignored)
+```
+
+---
+
+## Planned phases (not built yet)
+
+| Phase | Module |
+|---|---|
+| 3 | Face recognition (InsightFace, enrollment, LFW evaluation) |
+| 4 | Pose estimation, fall detection, violence classifier |
+| 5 | Weapon detection, vehicle tracking, ANPR |
+| 6 | Image enhancement, stabilization, background subtraction, optical flow |
+| 7 | FastAPI backend, JWT auth, alerts, WebSocket, OpenSearch |
+| 8 | React dashboard: live grid, alerts, search, trajectories |
+| 9 | Deployment: Nginx, ONNX/TensorRT, CI, one-command demo |
+
+---
+
+## Ethics, licenses and data
+
+- Only public datasets and footage of consenting people are used.
+- Face data is biometric personal data under India's DPDP Act 2023. Enrolled faces are stored only for the demo and can be deleted.
+- Ultralytics YOLO is AGPL-3.0. InsightFace pretrained weights are non-commercial. Some datasets carry research-only terms.
+- Record each dataset's license and date in `docs/ethics.md`.
+- Videos and recordings stay out of git (`data/` and `runs/` are git-ignored).
+- The CUHK03 and WILDTRACK results use the standard evaluation protocol. The Market-1501 best checkpoint was chosen using the test set, which is common practice but slightly optimistic.
+
+---
+
+## Hardware
+
+All results were produced on an NVIDIA GeForce RTX 4060 Laptop GPU (8 GB), PyTorch 2.14 (CUDA 12.6), Ultralytics 8.4.171, Python 3.12, Windows 11.

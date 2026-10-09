@@ -31,6 +31,20 @@ def set_seed(s: int):
     torch.cuda.manual_seed_all(s)
 
 
+def load_init(model: ReIDNet, path: str) -> tuple[int, list[str]]:
+    """Start from an existing checkpoint (e.g. Market-1501) for fine-tuning. The classifier is skipped: it has
+    one output per training person, and a new dataset has different people."""
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    if ck.get("feat_dim") != model.feat_dim:
+        raise ValueError(f"checkpoint embedding size {ck.get('feat_dim')} != model {model.feat_dim}; "
+                         f"pass the same --feat-dim and --backbone")
+    sd = {k: v for k, v in ck["state_dict"].items() if not k.startswith("classifier.")}
+    res = model.load_state_dict(sd, strict=False)
+    if res.unexpected_keys:
+        raise ValueError(f"checkpoint does not match this backbone (unexpected: {res.unexpected_keys[:3]}...)")
+    return len(sd), list(res.missing_keys)
+
+
 def lr_factor(epoch: int, epochs: int, warmup: int) -> float:
     if epoch < warmup:
         return (epoch + 1) / warmup
@@ -54,6 +68,7 @@ def main(argv=None) -> int:
     ap.add_argument("--eval-every", type=int, default=10)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--device", default="auto")
+    ap.add_argument("--init-ckpt", help="fine-tune: start from this checkpoint (same --backbone / --feat-dim)")
     ap.add_argument("--no-pretrained", action="store_true", help="skip ImageNet weights (offline / tests)")
     ap.add_argument("--max-batches", type=int, help="debug: batches per epoch")
     ap.add_argument("--seed", type=int, default=0)
@@ -75,6 +90,9 @@ def main(argv=None) -> int:
           f"{len(sampler)} batches/epoch of {a.p * a.k}")
 
     model = ReIDNet(a.backbone, ds.num_classes, a.feat_dim, pretrained=not a.no_pretrained).to(device)
+    if a.init_ckpt:
+        n, missing = load_init(model, a.init_ckpt)
+        print(f"initialised {n} tensors from {a.init_ckpt} (new, untrained: {missing})")
     opt = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda e: lr_factor(e, a.epochs, a.warmup))
     scaler = torch.amp.GradScaler("cuda", enabled=use_cuda)

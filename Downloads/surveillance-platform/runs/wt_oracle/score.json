@@ -1,0 +1,30 @@
+{
+  "mtmc": {
+    "HOTA": 46.23983141207062,
+    "DetA": 98.84938983744816,
+    "AssA": 21.630105095733168,
+    "MOTA": 94.15262636273538,
+    "IDF1": 36.30930145685468,
+    "IDSW": 195,
+    "FP": 0,
+    "FN": 41
+  },
+  "links": {
+    "cross_camera": {
+      "precision": null,
+      "recall": null,
+      "f1": null,
+      "pairs": 0
+    },
+    "same_camera": {
+      "precision": null,
+      "recall": null,
+      "f1": null,
+      "pairs": 0
+    }
+  },
+  "true_people": 70,
+  "predicted_identities": 83,
+  "labeled_tracklets": 298,
+  "unmatched_tracklets": 29
+}

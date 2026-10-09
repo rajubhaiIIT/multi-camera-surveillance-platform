@@ -1,0 +1,20 @@
+{
+  "data": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_training_runs_end_to_end_0\\m",
+  "out": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_training_runs_end_to_end_0\\out",
+  "backbone": "resnet18",
+  "feat_dim": 32,
+  "epochs": 1,
+  "p": 4,
+  "k": 2,
+  "lr": 0.00035,
+  "wd": 0.0005,
+  "warmup": 5,
+  "margin": 0.3,
+  "eval_every": 1,
+  "workers": 0,
+  "device": "cpu",
+  "init_ckpt": null,
+  "no_pretrained": true,
+  "max_batches": 2,
+  "seed": 0
+}

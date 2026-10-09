@@ -1,0 +1,20 @@
+{
+  "data": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_finetune_command_runs_on_0\\wt_reid",
+  "out": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_finetune_command_runs_on_0\\ft",
+  "backbone": "resnet18",
+  "feat_dim": 32,
+  "epochs": 1,
+  "p": 2,
+  "k": 2,
+  "lr": 0.00035,
+  "wd": 0.0005,
+  "warmup": 5,
+  "margin": 0.3,
+  "eval_every": 1,
+  "workers": 0,
+  "device": "cpu",
+  "init_ckpt": "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_finetune_command_runs_on_0\\init.pt",
+  "no_pretrained": true,
+  "max_batches": 2,
+  "seed": 0
+}

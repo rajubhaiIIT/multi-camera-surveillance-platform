@@ -1,0 +1,6 @@
+camera,track_id,frames,first_ts,last_ts,person
+cam1,1,50,0.0,9.8,anna
+cam1,2,50,0.0,9.8,ben
+cam2,7,50,30.0,39.8,ben
+cam2,8,50,30.0,39.8,anna
+cam2,9,50,30.0,39.8,

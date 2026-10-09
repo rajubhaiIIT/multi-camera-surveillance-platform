@@ -26,6 +26,7 @@ class MatcherConfig:
     max_gap_s: float = 600.0       # an identity unseen for longer than this is not matched again
     gallery_size: int = 20         # embeddings (one per tracklet) kept per identity
     min_embeddings: int = 3        # a tracklet needs this many embeddings before it may be matched
+    use_constraints: bool = True   # False = appearance only (for the ablation table)
 
 
 @dataclass
@@ -34,6 +35,7 @@ class Topology:
     min_travel_s: dict = field(default_factory=dict)   # {("camA","camB"): seconds}, symmetric
     overlapping: set = field(default_factory=set)      # {frozenset({"camA","camB"})}: can see the same person at once
     default_min_travel_s: float = 0.0
+    all_overlapping: bool = False                      # every pair of cameras sees the same area (e.g. WILDTRACK)
 
     def travel(self, a: str, b: str) -> float:
         if a == b:
@@ -41,7 +43,7 @@ class Topology:
         return self.min_travel_s.get((a, b), self.min_travel_s.get((b, a), self.default_min_travel_s))
 
     def overlap(self, a: str, b: str) -> bool:
-        return a != b and frozenset((a, b)) in self.overlapping
+        return a != b and (self.all_overlapping or frozenset((a, b)) in self.overlapping)
 
 
 @dataclass
@@ -76,6 +78,8 @@ class GlobalMatcher:
 
     # ---- constraints -------------------------------------------------------
     def _allowed(self, t: TrackletInfo, ident: Identity) -> bool:
+        if not self.cfg.use_constraints:
+            return True
         cam = t.camera_id
         if ident.active.get(cam):                       # already visible in this very camera: two people, not one
             return False
@@ -157,3 +161,18 @@ class GlobalMatcher:
             ident.gallery.popitem(last=False)
         ident.last_ts, ident.last_cam = max(ident.last_ts, t.last_ts), t.camera_id
         self.bound[t.key] = ident.gid
+
+
+def load_config(path) -> tuple[MatcherConfig, Topology]:
+    """Read matcher settings and camera layout from a JSON file, e.g.
+    {"matcher": {"sim_threshold": 0.55, "max_gap_s": 300},
+     "min_travel_s": {"cam1,cam2": 8}, "overlapping": [["cam2", "cam3"]], "default_min_travel_s": 0}"""
+    import json
+    d = json.loads(open(path).read())
+    cfg = MatcherConfig(**d.get("matcher", {}))
+    topo = Topology(
+        min_travel_s={tuple(k.split(",")): float(v) for k, v in d.get("min_travel_s", {}).items()},
+        overlapping={frozenset(p) for p in d.get("overlapping", [])},
+        default_min_travel_s=float(d.get("default_min_travel_s", 0.0)),
+        all_overlapping=bool(d.get("all_overlapping", False)))
+    return cfg, topo

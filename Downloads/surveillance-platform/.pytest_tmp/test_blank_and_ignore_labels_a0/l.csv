@@ -1,0 +1,4 @@
+camera,track_id,frames,first_ts,last_ts,person
+c1,1,20,0,1,
+c1,2,20,0,1,ignore
+c1,3,20,0,1,Bob

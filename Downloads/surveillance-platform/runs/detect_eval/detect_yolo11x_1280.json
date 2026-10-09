@@ -1,0 +1,204 @@
+{
+  "total": {
+    "gt_boxes": 4036,
+    "AP50": 32.3,
+    "AP50_95": 9.6,
+    "AP50_ignoring_outside_area": 39.4,
+    "recall_at_conf": 61.7,
+    "precision_at_conf": 25.6,
+    "precision_ignoring_outside_area": 38.4,
+    "boxes_at_conf": 9711,
+    "recall_by_person_height": {
+      "small_lt60px": {
+        "gt": 0,
+        "recall": null
+      },
+      "medium_60_120px": {
+        "gt": 531,
+        "recall": 46.5
+      },
+      "large_gt120px": {
+        "gt": 3505,
+        "recall": 64.0
+      }
+    }
+  },
+  "cameras": {
+    "C1": {
+      "gt_boxes": 991,
+      "AP50": 40.3,
+      "AP50_95": 13.5,
+      "AP50_ignoring_outside_area": 40.4,
+      "recall_at_conf": 63.1,
+      "precision_at_conf": 41.8,
+      "precision_ignoring_outside_area": 42.2,
+      "boxes_at_conf": 1496,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 100,
+          "recall": 54.0
+        },
+        "large_gt120px": {
+          "gt": 891,
+          "recall": 64.1
+        }
+      }
+    },
+    "C2": {
+      "gt_boxes": 707,
+      "AP50": 53.1,
+      "AP50_95": 18.4,
+      "AP50_ignoring_outside_area": 60.3,
+      "recall_at_conf": 61.7,
+      "precision_at_conf": 36.7,
+      "precision_ignoring_outside_area": 70.2,
+      "boxes_at_conf": 1189,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 707,
+          "recall": 61.7
+        }
+      }
+    },
+    "C3": {
+      "gt_boxes": 670,
+      "AP50": 43.6,
+      "AP50_95": 12.8,
+      "AP50_ignoring_outside_area": 43.7,
+      "recall_at_conf": 70.3,
+      "precision_at_conf": 28.0,
+      "precision_ignoring_outside_area": 29.0,
+      "boxes_at_conf": 1683,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 3,
+          "recall": 66.7
+        },
+        "large_gt120px": {
+          "gt": 667,
+          "recall": 70.3
+        }
+      }
+    },
+    "C4": {
+      "gt_boxes": 231,
+      "AP50": 26.4,
+      "AP50_95": 8.6,
+      "AP50_ignoring_outside_area": 29.6,
+      "recall_at_conf": 64.5,
+      "precision_at_conf": 10.9,
+      "precision_ignoring_outside_area": 18.3,
+      "boxes_at_conf": 1372,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 231,
+          "recall": 64.5
+        }
+      }
+    },
+    "C5": {
+      "gt_boxes": 182,
+      "AP50": 37.8,
+      "AP50_95": 8.7,
+      "AP50_ignoring_outside_area": 59.3,
+      "recall_at_conf": 75.3,
+      "precision_at_conf": 10.1,
+      "precision_ignoring_outside_area": 66.5,
+      "boxes_at_conf": 1350,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 182,
+          "recall": 75.3
+        }
+      }
+    },
+    "C6": {
+      "gt_boxes": 1032,
+      "AP50": 36.3,
+      "AP50_95": 8.6,
+      "AP50_ignoring_outside_area": 46.4,
+      "recall_at_conf": 54.4,
+      "precision_at_conf": 35.1,
+      "precision_ignoring_outside_area": 58.7,
+      "boxes_at_conf": 1599,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 428,
+          "recall": 44.6
+        },
+        "large_gt120px": {
+          "gt": 604,
+          "recall": 61.3
+        }
+      }
+    },
+    "C7": {
+      "gt_boxes": 223,
+      "AP50": 13.1,
+      "AP50_95": 3.8,
+      "AP50_ignoring_outside_area": 15.7,
+      "recall_at_conf": 49.3,
+      "precision_at_conf": 10.8,
+      "precision_ignoring_outside_area": 14.2,
+      "boxes_at_conf": 1022,
+      "recall_by_person_height": {
+        "small_lt60px": {
+          "gt": 0,
+          "recall": null
+        },
+        "medium_60_120px": {
+          "gt": 0,
+          "recall": null
+        },
+        "large_gt120px": {
+          "gt": 223,
+          "recall": 49.3
+        }
+      }
+    }
+  },
+  "images": 350,
+  "seconds": 26.1,
+  "images_per_second": 13.44,
+  "conf_for_recall_precision": 0.25,
+  "weights": "yolo11x.pt",
+  "imgsz": 1280,
+  "device": "cuda:0",
+  "frames_per_camera": 50
+}

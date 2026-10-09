@@ -40,11 +40,11 @@ def load_split(root: Path, split: str) -> list[tuple[str, int, int]]:
     """Return [(image_path, person_id, camera_id)]. Gallery contains junk (-1) and distractor (0) ids by design."""
     folder = root / FOLDERS[split]
     items = []
-    for f in sorted(folder.glob("*.jpg")):
+    for f in sorted(f for ext in ("*.jpg","*.jpeg","*.png") for f in folder.glob(ext)):
         pid, cam = parse_market_name(f.name)
         items.append((str(f), pid, cam))
     if not items:
-        raise FileNotFoundError(f"no .jpg files in {folder}")
+        raise FileNotFoundError(f"no images (.jpg/.png) in {folder}")
     return items
 
 

@@ -1,0 +1,6 @@
+{
+  "all_overlapping": true,
+  "matcher": {
+    "max_gap_s": 60.0
+  }
+}

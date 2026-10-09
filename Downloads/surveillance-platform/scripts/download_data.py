@@ -91,14 +91,16 @@ DATASETS: dict[str, dict] = {
                "(camera 0 is enough). Unzip them into one folder.",
     },
     "wildtrack": {
-        "title": "WILDTRACK (multi-camera tracking)",
-        "method": "manual",
+        "title": "WILDTRACK (multi-camera tracking, 7 overlapping cameras, ground truth IDs)",
+        "method": "url",
+        "url": "http://documents.epfl.ch/groups/c/cv/cvlab-unit/www/data/Wildtrack/Wildtrack_dataset_full.zip",
         "expect": ["annotations_positions", "Image_subsets"],
-        "size": "about 2 GB",
-        "used_in": "Phase 2 (cross-camera IDF1)",
+        "size": "about 7 GB (needs about 14 GB free while extracting; delete the zip afterwards)",
+        "used_in": "Phase 2 (cross-camera IDF1 without filming)",
         "page": "https://www.epfl.ch/labs/cvlab/data/data-wildtrack/",
-        "how": "Download the dataset from the EPFL page. Expect annotations_positions, "
-               "calibrations and Image_subsets folders.",
+        "how": "If the direct link fails, use the official page above, or the Kaggle copy 'wildtrack-dataset' / the "
+               "Academic Torrents 'WILDTRACK Seven-Camera HD Dataset (repack)'. Expect annotations_positions/, "
+               "calibrations/ and Image_subsets/ folders.",
     },
     "weapons": {
         "title": "One Roboflow / Kaggle weapon dataset (guns, knives)",

@@ -1,0 +1,66 @@
+{
+  "created": "2026-10-05T05:48:32",
+  "stride": 1,
+  "cameras": {
+    "C1": {
+      "video": [
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000000.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000005.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000010.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000015.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000020.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000025.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000030.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000035.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000040.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C1\\00000045.png"
+      ],
+      "offset": 0.0,
+      "fps": 2.0,
+      "stride": 1,
+      "frames_total": 10,
+      "last_idx": 9,
+      "frames_processed": 10
+    },
+    "C2": {
+      "video": [
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000000.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000005.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000010.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000015.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000020.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000025.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000030.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000035.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000040.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C2\\00000045.png"
+      ],
+      "offset": 0.0,
+      "fps": 2.0,
+      "stride": 1,
+      "frames_total": 10,
+      "last_idx": 9,
+      "frames_processed": 10
+    },
+    "C3": {
+      "video": [
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000000.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000005.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000010.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000015.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000020.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000025.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000030.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000035.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000040.png",
+        "C:\\Users\\draja\\Downloads\\surveillance-platform\\.pytest_tmp\\test_render_works_from_image_l0\\Wildtrack_dataset\\Image_subsets\\C3\\00000045.png"
+      ],
+      "offset": 0.0,
+      "fps": 2.0,
+      "stride": 1,
+      "frames_total": 10,
+      "last_idx": 9,
+      "frames_processed": 10
+    }
+  }
+}

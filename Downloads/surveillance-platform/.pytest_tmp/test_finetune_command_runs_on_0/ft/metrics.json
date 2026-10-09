@@ -1,0 +1,18 @@
+{
+  "rank1": 100.0,
+  "rank5": 100.0,
+  "rank10": 100.0,
+  "mAP": 100.0,
+  "valid_queries": 4,
+  "skipped_queries": 0,
+  "queries": 4,
+  "gallery": 16,
+  "threshold_suggestion": {
+    "threshold": 0.6,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "same_person_mean_sim": 1.0,
+    "different_person_mean_sim": 0.5995597243309021
+  }
+}

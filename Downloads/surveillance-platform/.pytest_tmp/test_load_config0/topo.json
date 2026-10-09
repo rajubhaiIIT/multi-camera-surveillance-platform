@@ -1,0 +1,1 @@
+{"matcher": {"sim_threshold": 0.7, "max_gap_s": 90}, "min_travel_s": {"cam1,cam2": 8}, "overlapping": [["cam2", "cam3"]]}

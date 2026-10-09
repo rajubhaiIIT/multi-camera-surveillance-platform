@@ -1,0 +1,60 @@
+{
+  "cameras": {
+    "C1": {
+      "gt_boxes": 10,
+      "pred_boxes": 10,
+      "tp": 10,
+      "fn": 0,
+      "fp_inside": 0,
+      "fp_outside": 0,
+      "fp_unknown": 0,
+      "recall": 100.0,
+      "precision_all": 100.0,
+      "precision_inside_area": null,
+      "fp_outside_share": null,
+      "area_estimated": false
+    },
+    "C2": {
+      "gt_boxes": 20,
+      "pred_boxes": 20,
+      "tp": 20,
+      "fn": 0,
+      "fp_inside": 0,
+      "fp_outside": 0,
+      "fp_unknown": 0,
+      "recall": 100.0,
+      "precision_all": 100.0,
+      "precision_inside_area": 100.0,
+      "fp_outside_share": null,
+      "area_estimated": true
+    },
+    "C3": {
+      "gt_boxes": 10,
+      "pred_boxes": 10,
+      "tp": 10,
+      "fn": 0,
+      "fp_inside": 0,
+      "fp_outside": 0,
+      "fp_unknown": 0,
+      "recall": 100.0,
+      "precision_all": 100.0,
+      "precision_inside_area": null,
+      "fp_outside_share": null,
+      "area_estimated": false
+    }
+  },
+  "total": {
+    "gt_boxes": 40,
+    "pred_boxes": 40,
+    "tp": 40,
+    "fn": 0,
+    "fp_inside": 0,
+    "fp_outside": 0,
+    "fp_unknown": 0,
+    "recall": 100.0,
+    "precision_all": 100.0,
+    "precision_inside_area": 100.0,
+    "fp_outside_share": null,
+    "area_estimated": true
+  }
+}

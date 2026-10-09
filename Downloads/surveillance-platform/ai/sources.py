@@ -101,3 +101,66 @@ def open_source(src: str):
     if src.lower().startswith(("rtsp://", "rtmp://", "http://", "https://")):
         return RtspSource(src)
     return FileSource(src)
+
+
+IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".bmp")
+
+
+def list_images(folder) -> list[str]:
+    from pathlib import Path
+    return [str(f) for f in sorted(Path(folder).iterdir()) if f.suffix.lower() in IMAGE_EXTS]
+
+
+class MediaReader:
+    """Frames from a video file, an image folder, or an explicit list of image paths.
+    Yields (frame_index, image) only for every `stride`-th frame; skipped frames are not decoded."""
+
+    def __init__(self, media, stride: int = 1, folder_fps: float = 2.0):
+        from pathlib import Path
+        self.stride, self.total = max(1, int(stride)), 0
+        if isinstance(media, (list, tuple)):
+            self.images, self.path = [str(m) for m in media], None
+        elif Path(str(media)).is_dir():
+            self.images, self.path = list_images(media), None
+        else:
+            self.images, self.path = None, str(media)
+        if self.images is not None:
+            if not self.images:
+                raise IOError(f"no images in {media}")
+            self.fps = float(folder_fps)
+        else:
+            cap = cv2.VideoCapture(self.path)
+            if not cap.isOpened():
+                raise IOError(f"cannot open video: {self.path}")
+            self.fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            cap.release()
+
+    @property
+    def source(self):
+        """What to store in a run's meta.json so the media can be found again."""
+        from pathlib import Path
+        return self.images if self.images is not None else str(Path(self.path).resolve())
+
+    def frames(self):
+        if self.images is not None:
+            for idx, p in enumerate(self.images):
+                self.total = idx + 1
+                if idx % self.stride == 0:
+                    img = cv2.imread(p)
+                    if img is None:
+                        raise IOError(f"cannot read image: {p}")
+                    yield idx, img
+            return
+        cap = cv2.VideoCapture(self.path)
+        idx = 0
+        try:
+            while True:
+                ok, img = (cap.grab(), None) if idx % self.stride else cap.read()
+                if not ok:
+                    break
+                self.total = idx + 1
+                if idx % self.stride == 0:
+                    yield idx, img
+                idx += 1
+        finally:
+            cap.release()

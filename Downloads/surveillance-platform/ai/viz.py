@@ -14,9 +14,10 @@ def color_for(track_id: int) -> tuple:
 def draw(frame, records, fps: float | None = None):
     for r in records:
         x1, y1, x2, y2 = (int(v) for v in r.bbox)
-        c = color_for(r.track_id)
+        ident = r.global_id if r.global_id is not None else r.track_id
+        c = color_for(ident + (1000 if r.global_id is not None else 0))
         cv2.rectangle(frame, (x1, y1), (x2, y2), c, 2)
-        label = f"{r.cls} #{r.track_id}"
+        label = f"P{r.global_id}" if r.global_id is not None else f"{r.cls} #{r.track_id}"
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         cv2.rectangle(frame, (x1, max(y1 - th - 6, 0)), (x1 + tw + 4, max(y1, th + 6)), c, -1)
         cv2.putText(frame, label, (x1 + 2, max(y1 - 4, th + 2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
