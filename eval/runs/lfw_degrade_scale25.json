@@ -1,0 +1,14 @@
+{
+  "accuracy": 99.767,
+  "std": 0.327,
+  "mean_threshold": 0.199,
+  "valid_pairs": 6000,
+  "total_pairs": 6000,
+  "pick": "center",
+  "det_size": 320,
+  "images": 7701,
+  "with_face": 7701,
+  "multi_face": 1320,
+  "pick_differs": 272,
+  "degrade_scale": 0.25
+}

@@ -1,0 +1,21 @@
+{
+  "accuracy": 99.817,
+  "std": 0.189,
+  "mean_threshold": 0.231,
+  "valid_pairs": 6000,
+  "total_pairs": 6000,
+  "pick": "center",
+  "det_size": 320,
+  "images": 7701,
+  "with_face": 7701,
+  "multi_face": 1443,
+  "pick_differs": 306,
+  "tar_at_far": {
+    "auc": 0.99941,
+    "tar@far=0.01": 0.998,
+    "tar@far=0.001": 0.99733,
+    "tar@far=0.0001": 0.997,
+    "genuine_pairs": 3000,
+    "impostor_pairs": 3000
+  }
+}

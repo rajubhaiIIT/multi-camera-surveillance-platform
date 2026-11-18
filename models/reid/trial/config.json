@@ -1,0 +1,19 @@
+{
+  "data": "data/raw/market1501",
+  "out": "models/reid/trial",
+  "backbone": "resnet50",
+  "feat_dim": 512,
+  "epochs": 2,
+  "p": 16,
+  "k": 4,
+  "lr": 0.00035,
+  "wd": 0.0005,
+  "warmup": 5,
+  "margin": 0.3,
+  "eval_every": 1,
+  "workers": 4,
+  "device": "auto",
+  "no_pretrained": false,
+  "max_batches": null,
+  "seed": 0
+}

@@ -1,0 +1,35 @@
+{
+  "max_edit_distance": 1,
+  "entries": {
+    "MH12DE1433": {
+      "reason": "Stolen Vehicle",
+      "owner": "John Doe",
+      "notes": "Reported Stolen - Crime Bureau, Black SUV"
+    },
+    "DL8CAF5030": {
+      "reason": "Suspicious Activity",
+      "owner": "Unknown",
+      "notes": "White Sedan flagged at perimeter"
+    },
+    "KA01MJ5014": {
+      "reason": "Expired Registration",
+      "owner": "Transit Authority",
+      "notes": "Commercial fleet vehicle"
+    },
+    "HR26DQ5551": {
+      "reason": "Wanted - Robbery Suspect",
+      "owner": "State Police",
+      "notes": "High priority alert"
+    },
+    "HUM316": {
+      "reason": "Stolen Vehicle",
+      "owner": "Amber Alert / Transit",
+      "notes": "Silver sedan reported stolen"
+    },
+    "KAME3535": {
+      "reason": "Suspicious Activity",
+      "owner": "Flagged Target",
+      "notes": "Vehicle flagged at checkpoint"
+    }
+  }
+}

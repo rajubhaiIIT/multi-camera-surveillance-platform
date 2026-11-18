@@ -1,0 +1,18 @@
+{
+  "rank1": 71.05106888361044,
+  "rank5": 85.92636579572446,
+  "rank10": 90.35035629453681,
+  "mAP": 50.16260635407488,
+  "valid_queries": 3368,
+  "skipped_queries": 0,
+  "queries": 3368,
+  "gallery": 19732,
+  "threshold_suggestion": {
+    "threshold": 0.62,
+    "precision": 0.7890723129373767,
+    "recall": 0.847710843373494,
+    "f1": 0.8173412016170253,
+    "same_person_mean_sim": 0.7596027851104736,
+    "different_person_mean_sim": 0.01411218661814928
+  }
+}

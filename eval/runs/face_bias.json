@@ -1,0 +1,16 @@
+{
+  "female": {
+    "rank1": 100.0,
+    "queries": 5,
+    "people": 5
+  },
+  "male": {
+    "rank1": 100.0,
+    "queries": 5,
+    "people": 5
+  },
+  "_summary": {
+    "max_gap_pp": 0.0,
+    "mean": 100.0
+  }
+}

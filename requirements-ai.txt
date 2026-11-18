@@ -1,0 +1,15 @@
+# Phase 1+ AI dependencies.
+# Install a CUDA build of torch FIRST (see README), otherwise Windows gets the CPU-only one.
+numpy
+scipy
+opencv-python>=4.9
+pillow
+onnx
+onnxruntime
+ultralytics>=8.3
+lap>=0.5.12        # ByteTrack needs it (if it fails to install on Windows, use: lapx)
+# TrackEval (HOTA/IDF1/MOTA) is not on PyPI; needs git installed.
+trackeval @ git+https://github.com/JonathonLuiten/TrackEval.git
+# Phase 3: face recognition. If the install fails on Windows with 'Microsoft Visual C++ 14.0 or greater is required',
+# install the Visual Studio C++ Build Tools, or tell me and I will switch to a no-compile fallback.
+insightface

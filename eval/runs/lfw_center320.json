@@ -1,0 +1,119 @@
+{
+  "accuracy": 99.817,
+  "std": 0.189,
+  "mean_threshold": 0.231,
+  "valid_pairs": 6000,
+  "total_pairs": 6000,
+  "pick": "center",
+  "det_size": 320,
+  "images": 7701,
+  "with_face": 7701,
+  "multi_face": 1443,
+  "pick_differs": 306,
+  "worst": {
+    "same_person_lowest": [
+      {
+        "similarity": 0.001,
+        "a": "data\\raw\\lfw\\lfw\\Jim_OBrien\\Jim_OBrien_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Jim_OBrien\\Jim_OBrien_0003.jpg"
+      },
+      {
+        "similarity": 0.013,
+        "a": "data\\raw\\lfw\\lfw\\Elisabeth_Schumacher\\Elisabeth_Schumacher_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Elisabeth_Schumacher\\Elisabeth_Schumacher_0002.jpg"
+      },
+      {
+        "similarity": 0.015,
+        "a": "data\\raw\\lfw\\lfw\\Cristina_Fernandez\\Cristina_Fernandez_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Cristina_Fernandez\\Cristina_Fernandez_0002.jpg"
+      },
+      {
+        "similarity": 0.027,
+        "a": "data\\raw\\lfw\\lfw\\Jim_OBrien\\Jim_OBrien_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Jim_OBrien\\Jim_OBrien_0002.jpg"
+      },
+      {
+        "similarity": 0.095,
+        "a": "data\\raw\\lfw\\lfw\\Surakait_Sathirathai\\Surakait_Sathirathai_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Surakait_Sathirathai\\Surakait_Sathirathai_0002.jpg"
+      },
+      {
+        "similarity": 0.136,
+        "a": "data\\raw\\lfw\\lfw\\Debra_Messing\\Debra_Messing_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Debra_Messing\\Debra_Messing_0002.jpg"
+      },
+      {
+        "similarity": 0.158,
+        "a": "data\\raw\\lfw\\lfw\\Martha_Bowen\\Martha_Bowen_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Martha_Bowen\\Martha_Bowen_0002.jpg"
+      },
+      {
+        "similarity": 0.172,
+        "a": "data\\raw\\lfw\\lfw\\Janica_Kostelic\\Janica_Kostelic_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Janica_Kostelic\\Janica_Kostelic_0002.jpg"
+      },
+      {
+        "similarity": 0.238,
+        "a": "data\\raw\\lfw\\lfw\\Nora_Bendijo\\Nora_Bendijo_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Nora_Bendijo\\Nora_Bendijo_0002.jpg"
+      },
+      {
+        "similarity": 0.265,
+        "a": "data\\raw\\lfw\\lfw\\Victoria_Beckham\\Victoria_Beckham_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Victoria_Beckham\\Victoria_Beckham_0002.jpg"
+      }
+    ],
+    "different_person_highest": [
+      {
+        "similarity": 0.242,
+        "a": "data\\raw\\lfw\\lfw\\Franklin_Brown\\Franklin_Brown_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Michael_Jackson\\Michael_Jackson_0010.jpg"
+      },
+      {
+        "similarity": 0.224,
+        "a": "data\\raw\\lfw\\lfw\\Cha_Yung-gu\\Cha_Yung-gu_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Takeo_Hiranuma\\Takeo_Hiranuma_0001.jpg"
+      },
+      {
+        "similarity": 0.212,
+        "a": "data\\raw\\lfw\\lfw\\Billy_Bob_Thornton\\Billy_Bob_Thornton_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Nong_Duc_Manh\\Nong_Duc_Manh_0001.jpg"
+      },
+      {
+        "similarity": 0.203,
+        "a": "data\\raw\\lfw\\lfw\\Janela_Jara\\Janela_Jara_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Pa_Kou_Hang\\Pa_Kou_Hang_0001.jpg"
+      },
+      {
+        "similarity": 0.203,
+        "a": "data\\raw\\lfw\\lfw\\Anette_Hosoi\\Anette_Hosoi_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Sheila_Taormina\\Sheila_Taormina_0001.jpg"
+      },
+      {
+        "similarity": 0.201,
+        "a": "data\\raw\\lfw\\lfw\\Colleen_OClair\\Colleen_OClair_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Tom_Hanusik\\Tom_Hanusik_0001.jpg"
+      },
+      {
+        "similarity": 0.196,
+        "a": "data\\raw\\lfw\\lfw\\Dianne_Feinstein\\Dianne_Feinstein_0003.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Dwayne_Johnson\\Dwayne_Johnson_0002.jpg"
+      },
+      {
+        "similarity": 0.18,
+        "a": "data\\raw\\lfw\\lfw\\Mark_Dacey\\Mark_Dacey_0001.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Turner_Stevenson\\Turner_Stevenson_0001.jpg"
+      },
+      {
+        "similarity": 0.179,
+        "a": "data\\raw\\lfw\\lfw\\Michael_Bloomberg\\Michael_Bloomberg_0015.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Ozzy_Osbourne\\Ozzy_Osbourne_0002.jpg"
+      },
+      {
+        "similarity": 0.174,
+        "a": "data\\raw\\lfw\\lfw\\George_Brumley\\George_Brumley_0002.jpg",
+        "b": "data\\raw\\lfw\\lfw\\Sergei_Yushenkov\\Sergei_Yushenkov_0001.jpg"
+      }
+    ]
+  }
+}

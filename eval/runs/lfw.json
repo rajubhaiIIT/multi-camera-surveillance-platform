@@ -1,0 +1,7 @@
+{
+  "accuracy": 95.8,
+  "std": 1.019,
+  "mean_threshold": 0.229,
+  "valid_pairs": 6000,
+  "total_pairs": 6000
+}

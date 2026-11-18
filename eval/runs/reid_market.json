@@ -1,0 +1,22 @@
+{
+  "rank1": 93.67577197149643,
+  "rank5": 97.5059382422803,
+  "rank10": 98.54513064133018,
+  "mAP": 82.50081659826427,
+  "valid_queries": 3368,
+  "skipped_queries": 0,
+  "queries": 3368,
+  "gallery": 19732,
+  "threshold_suggestion": {
+    "threshold": 0.36,
+    "precision": 0.9524048599256953,
+    "recall": 0.9142168674698795,
+    "f1": 0.9329202321235369,
+    "same_person_mean_sim": 0.5824111700057983,
+    "different_person_mean_sim": 0.006755094975233078
+  },
+  "checkpoint": "models/reid/resnet50_market/best.pt",
+  "data": "data/raw/market1501",
+  "backbone": "resnet50",
+  "feat_dim": 512
+}

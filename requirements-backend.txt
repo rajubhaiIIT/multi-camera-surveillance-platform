@@ -1,0 +1,10 @@
+# Phase 7 FastAPI Backend & Real-Time Services
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pyjwt[crypto]>=2.8.0
+bcrypt>=4.1.0
+python-multipart>=0.0.9
+websockets>=12.0
+opensearch-py>=2.6.0
+psycopg[binary]>=3.1
