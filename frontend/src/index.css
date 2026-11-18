@@ -127,6 +127,14 @@ input:focus, select:focus { border-color: var(--border-focus); }
   min-height: 100vh;
 }
 
+.main-content.traffic-mode {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
 /* ─── Page Headers ─── */
 .page-header {
   display: flex; justify-content: space-between; align-items: center;

@@ -265,7 +265,7 @@ class VideoAnalysisManager:
                 from ai.weapons.detector import WeaponDetector
                 weights_p = Path("models/firearm_yolov8n.pt")
                 w_weights = str(weights_p) if weights_p.exists() else "yolo11n.pt"
-                weapon_detector = WeaponDetector(weights=w_weights, device="auto", conf=0.25)
+                weapon_detector = WeaponDetector(weights=w_weights, device="auto", conf=0.55)
                 logger.info("Loaded Weapon detection engine (%s) for %s", w_weights, camera_id)
             except Exception as e:
                 logger.debug("Weapon detector init note for %s: %s", camera_id, e)

@@ -510,10 +510,16 @@ export default function TrafficANPRPage() {
     <div
       className="traffic-anpr-page"
       style={{
-        padding: '16px 20px',
+        padding: '0',
         color: '#f8fafc',
-        maxWidth: 1600,
-        margin: '0 auto',
+        width: '100%',
+        maxWidth: '100%',
+        height: '100%',
+        maxHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -544,12 +550,22 @@ export default function TrafficANPRPage() {
       )}
 
       {/* Top Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Car size={22} color="#38bdf8" />
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em' }}>
-              Traffic Surveillance & Zone-Based ANPR
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '6px 10px',
+          marginBottom: 8,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Car size={18} color="#38bdf8" />
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+              Traffic Surveillance & ANPR
             </h2>
           </div>
           <span
@@ -557,10 +573,11 @@ export default function TrafficANPRPage() {
               background: 'rgba(56, 189, 248, 0.15)',
               color: '#38bdf8',
               border: '1px solid rgba(56, 189, 248, 0.3)',
-              padding: '2px 8px',
-              borderRadius: 10,
-              fontSize: 11,
+              padding: '1px 6px',
+              borderRadius: 8,
+              fontSize: 10,
               fontWeight: 700,
+              whiteSpace: 'nowrap',
             }}
           >
             FAST-ALPR ACTIVE
@@ -568,9 +585,9 @@ export default function TrafficANPRPage() {
         </div>
 
         {/* Traffic Camera Selector & Quick Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8' }}>
-            <Camera size={14} /> Traffic Feed:
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94a3b8' }}>
+            <Camera size={13} /> Feed:
             {cameras.length > 0 ? (
               <select
                 value={selectedCamId}
@@ -579,9 +596,9 @@ export default function TrafficANPRPage() {
                   background: '#0f172a',
                   color: '#f8fafc',
                   border: '1px solid #334155',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 12,
+                  borderRadius: 5,
+                  padding: '3px 8px',
+                  fontSize: 11,
                   fontFamily: 'monospace',
                   fontWeight: 600,
                 }}
@@ -595,7 +612,7 @@ export default function TrafficANPRPage() {
             ) : (
               <button
                 className="btn btn-sm btn-primary"
-                style={{ fontSize: 11, padding: '3px 10px', fontWeight: 700 }}
+                style={{ fontSize: 10, padding: '2px 8px', fontWeight: 700 }}
                 onClick={handleAddTrafficCam}
               >
                 + Add Traffic Camera
@@ -604,11 +621,11 @@ export default function TrafficANPRPage() {
             {selectedCamId && (
               <button
                 className="btn btn-sm btn-outline"
-                style={{ padding: '4px 6px', color: '#f87171', borderColor: '#475569' }}
+                style={{ padding: '3px 5px', color: '#f87171', borderColor: '#475569' }}
                 onClick={handleDeleteTrafficCam}
                 title={`Delete traffic camera ${selectedCamId}`}
               >
-                <Trash2 size={13} />
+                <Trash2 size={12} />
               </button>
             )}
           </div>
@@ -620,8 +637,8 @@ export default function TrafficANPRPage() {
                 background: '#0f172a',
                 color: '#94a3b8',
                 border: '1px solid #334155',
-                borderRadius: 6,
-                padding: '4px 8px',
+                borderRadius: 5,
+                padding: '3px 6px',
                 fontSize: 11,
               }}
               onChange={e => {
@@ -629,7 +646,7 @@ export default function TrafficANPRPage() {
               }}
               defaultValue=""
             >
-              <option value="" disabled>🎬 Attach Video Sample...</option>
+              <option value="" disabled>🎬 Attach Video...</option>
               {availableVideos.map(v => (
                 <option key={v.filename} value={v.filename}>
                   {v.filename} ({v.size_mb} MB)
@@ -649,12 +666,12 @@ export default function TrafficANPRPage() {
           <button
             className="btn btn-sm btn-primary"
             style={{
-              padding: '4px 10px',
+              padding: '3px 8px',
               fontSize: 11,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
+              gap: 4,
               background: '#0284c7',
               borderColor: '#0284c7',
             }}
@@ -662,20 +679,20 @@ export default function TrafficANPRPage() {
             disabled={isUploading}
             title="Upload an MP4/video file directly from your computer to this traffic camera"
           >
-            {isUploading ? <Loader2 size={13} className="spin" /> : <UploadCloud size={13} />}
+            {isUploading ? <Loader2 size={12} className="spin" /> : <UploadCloud size={12} />}
             {isUploading ? 'Uploading...' : 'Upload Video'}
           </button>
 
           {/* ANPR OCR Model Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>OCR:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600 }}>OCR:</span>
             <select
               style={{
                 background: '#0f172a',
                 color: '#38bdf8',
                 border: '1px solid #0284c7',
-                borderRadius: 6,
-                padding: '4px 8px',
+                borderRadius: 5,
+                padding: '3px 6px',
                 fontSize: 11,
                 fontWeight: 600,
                 outline: 'none',
@@ -683,12 +700,12 @@ export default function TrafficANPRPage() {
               }}
               value={anprEngine}
               onChange={e => handleSwitchEngine(e.target.value)}
-              title="Select ANPR neural engine (New high-accuracy model or preserved legacy model)"
+              title="Select ANPR neural engine"
             >
-              <option value="cct_s">⚡ CCT-S v2 (High-Accuracy New Model)</option>
-              <option value="cct_xs">🛡️ CCT-XS v2 (Original Legacy Model)</option>
-              <option value="easyocr">🔍 EasyOCR (PyTorch GPU CRAFT)</option>
-              <option value="mobile_vit">🌐 MobileViT-v2 Global</option>
+              <option value="cct_s">⚡ CCT-S v2 (High-Accuracy)</option>
+              <option value="cct_xs">🛡️ CCT-XS v2 (Legacy)</option>
+              <option value="easyocr">🔍 EasyOCR (PyTorch)</option>
+              <option value="mobile_vit">🌐 MobileViT-v2</option>
             </select>
           </div>
 
@@ -697,7 +714,7 @@ export default function TrafficANPRPage() {
             <button
               className="btn btn-sm btn-outline"
               style={{
-                padding: '4px 10px',
+                padding: '3px 8px',
                 fontSize: 11,
                 fontWeight: 700,
                 color: '#f87171',
@@ -705,29 +722,29 @@ export default function TrafficANPRPage() {
                 background: 'rgba(239, 68, 68, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
               }}
               onClick={handleStopTrafficAI}
               title="Stop background AI inference"
             >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
               Stop AI
             </button>
           ) : (
             <button
               className="btn btn-sm btn-success"
               style={{
-                padding: '4px 10px',
+                padding: '3px 8px',
                 fontSize: 11,
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
               }}
               onClick={handleStartTrafficAI}
-              title="Start Traffic AI (strictly vehicles and stolen plate search)"
+              title="Start Traffic AI"
             >
-              <Zap size={13} />
+              <Zap size={12} />
               Start Traffic AI
             </button>
           )}
@@ -736,25 +753,35 @@ export default function TrafficANPRPage() {
           <button
             className={`btn btn-sm ${isEditingZone ? 'btn-primary' : 'btn-outline'}`}
             style={{
-              padding: '4px 12px',
-              fontSize: 12,
+              padding: '3px 10px',
+              fontSize: 11,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 5,
               background: isEditingZone ? '#0284c7' : 'transparent',
               borderColor: isEditingZone ? '#38bdf8' : '#334155',
             }}
             onClick={() => setIsEditingZone(!isEditingZone)}
             title="Drag the 4 corner handles on the video feed to set the plate detection region"
           >
-            <Sliders size={14} /> {isEditingZone ? 'Done Editing' : 'Set Detection Region'}
+            <Sliders size={12} /> {isEditingZone ? 'Done Editing' : 'Set Region'}
           </button>
         </div>
       </div>
 
-      {/* Main Two-Panel Layout (Left Viewport 68% | Right ANPR Dashboard 32%) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2.3fr) minmax(360px, 1.15fr)', gap: 16 }}>
+      {/* Main Two-Panel Layout (Left Viewport 66% | Right ANPR Dashboard 34%) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.8fr) minmax(300px, 1.2fr)',
+          gap: 10,
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
         {/* ========================================================= */}
         {/* LEFT PANEL: Live Camera Feed with Virtual Monitoring Zone */}
         {/* ========================================================= */}
@@ -767,55 +794,59 @@ export default function TrafficANPRPage() {
             border: '1px solid #1e293b',
             display: 'flex',
             flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            minWidth: 0,
           }}
         >
           {/* Viewport Action Header Bar */}
           <div
             style={{
-              padding: '10px 14px',
+              padding: '6px 12px',
               background: '#090d16',
               borderBottom: '1px solid #1e293b',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexShrink: 0,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 style={{
                   background: '#0284c7',
                   color: 'white',
                   fontFamily: 'monospace',
                   fontWeight: 700,
-                  fontSize: 11,
-                  padding: '2px 8px',
+                  fontSize: 10,
+                  padding: '1px 6px',
                   borderRadius: 4,
                 }}
               >
                 {selectedCam.id}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedCam.name}</span>
-              <span style={{ fontSize: 11, color: '#64748b' }}>• {selectedCam.location || 'Highway Sector'}</span>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>{selectedCam.name}</span>
+              <span style={{ fontSize: 10, color: '#64748b' }}>• {selectedCam.location || 'Highway Sector'}</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {isEditingZone && (
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   <button
                     className="btn btn-outline btn-sm"
-                    style={{ fontSize: 11, padding: '2px 8px', color: '#94a3b8' }}
+                    style={{ fontSize: 10, padding: '2px 6px', color: '#94a3b8' }}
                     onClick={handleResetZone}
                     title="Reset zone to default road trapezoid"
                   >
-                    <RotateCcw size={12} /> Reset
+                    <RotateCcw size={11} /> Reset
                   </button>
                   <button
                     className="btn btn-primary btn-sm"
-                    style={{ fontSize: 11, padding: '2px 10px', background: '#16a34a', borderColor: '#22c55e' }}
+                    style={{ fontSize: 10, padding: '2px 8px', background: '#16a34a', borderColor: '#22c55e' }}
                     onClick={handleSaveZone}
                     disabled={isSavingZone}
                   >
-                    <Check size={12} /> {isSavingZone ? 'Saving...' : 'Save Zone'}
+                    <Check size={11} /> {isSavingZone ? 'Saving...' : 'Save Zone'}
                   </button>
                 </div>
               )}
@@ -829,8 +860,8 @@ export default function TrafficANPRPage() {
                       color: 'white',
                       border: 'none',
                       borderRadius: 3,
-                      padding: '2px 8px',
-                      fontSize: 11,
+                      padding: '1px 6px',
+                      fontSize: 10,
                       cursor: 'pointer',
                       fontWeight: 600,
                     }}
@@ -844,8 +875,8 @@ export default function TrafficANPRPage() {
                       color: 'white',
                       border: 'none',
                       borderRadius: 3,
-                      padding: '2px 8px',
-                      fontSize: 11,
+                      padding: '1px 6px',
+                      fontSize: 10,
                       cursor: 'pointer',
                       fontWeight: 600,
                     }}
@@ -864,7 +895,9 @@ export default function TrafficANPRPage() {
             style={{
               position: 'relative',
               width: '100%',
-              minHeight: 480,
+              flex: 1,
+              minHeight: 0,
+              minWidth: 0,
               background: '#000000',
               display: 'flex',
               alignItems: 'center',
@@ -880,9 +913,10 @@ export default function TrafficANPRPage() {
                   src={`/api/cameras/${selectedCam.id}/stream`}
                   alt={`Live Camera Feed ${selectedCam.id}`}
                   style={{
-                    width: '100%',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
                     height: 'auto',
-                    maxHeight: 680,
                     display: 'block',
                     objectFit: 'contain',
                   }}
@@ -896,9 +930,10 @@ export default function TrafficANPRPage() {
                   playsInline
                   controls
                   style={{
-                    width: '100%',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
                     height: 'auto',
-                    maxHeight: 680,
                     display: 'block',
                     objectFit: 'contain',
                   }}
@@ -1047,20 +1082,24 @@ export default function TrafficANPRPage() {
             background: '#090e17',
             border: '1px solid #1e293b',
             borderRadius: 8,
-            padding: 16,
+            padding: '10px 12px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            gap: 8,
+            height: '100%',
+            minHeight: 0,
+            minWidth: 0,
+            overflow: 'hidden',
             boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
           }}
         >
           {/* Header Title + LIVE Badge */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <div>
               <h3
                 style={{
                   margin: 0,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: 800,
                   letterSpacing: '0.04em',
                   color: '#f8fafc',
@@ -1069,7 +1108,7 @@ export default function TrafficANPRPage() {
               >
                 ANPR DASHBOARD
               </h3>
-              <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+              <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>
                 Zone based vehicle plate recognition
               </div>
             </div>
@@ -1079,11 +1118,11 @@ export default function TrafficANPRPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: 800,
                 color: '#ef4444',
                 background: 'rgba(239, 68, 68, 0.15)',
-                padding: '2px 8px',
+                padding: '2px 7px',
                 borderRadius: 10,
                 border: '1px solid rgba(239, 68, 68, 0.4)',
                 letterSpacing: '0.05em',
@@ -1091,8 +1130,8 @@ export default function TrafficANPRPage() {
             >
               <span
                 style={{
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   borderRadius: '50%',
                   background: '#ef4444',
                   boxShadow: '0 0 8px #ef4444',
@@ -1107,8 +1146,9 @@ export default function TrafficANPRPage() {
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr 1fr',
-              gap: 8,
+              gap: 6,
               textAlign: 'center',
+              flexShrink: 0,
             }}
           >
             {/* Plates Tile */}
@@ -1117,13 +1157,13 @@ export default function TrafficANPRPage() {
                 background: '#0e1626',
                 border: '1px solid #1e293b',
                 borderRadius: 6,
-                padding: '8px 4px',
+                padding: '5px 2px',
               }}
             >
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#22c55e', lineHeight: 1 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#22c55e', lineHeight: 1 }}>
                 {kpiPlates}
               </div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#64748b', marginTop: 4, letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: '#64748b', marginTop: 3, letterSpacing: '0.05em' }}>
                 PLATES
               </div>
             </div>
@@ -1134,13 +1174,13 @@ export default function TrafficANPRPage() {
                 background: '#0e1626',
                 border: '1px solid #1e293b',
                 borderRadius: 6,
-                padding: '8px 4px',
+                padding: '5px 2px',
               }}
             >
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#ef4444', lineHeight: 1 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#ef4444', lineHeight: 1 }}>
                 {kpiNoRead}
               </div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#64748b', marginTop: 4, letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: '#64748b', marginTop: 3, letterSpacing: '0.05em' }}>
                 NO READ
               </div>
             </div>
@@ -1151,13 +1191,13 @@ export default function TrafficANPRPage() {
                 background: '#0e1626',
                 border: '1px solid #1e293b',
                 borderRadius: 6,
-                padding: '8px 4px',
+                padding: '5px 2px',
               }}
             >
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#38bdf8', lineHeight: 1 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#38bdf8', lineHeight: 1 }}>
                 {kpiVehicles}
               </div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#64748b', marginTop: 4, letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: '#64748b', marginTop: 3, letterSpacing: '0.05em' }}>
                 VEHICLES
               </div>
             </div>
@@ -1169,7 +1209,8 @@ export default function TrafficANPRPage() {
               background: '#0c1322',
               border: '1px solid #1e2d4a',
               borderRadius: 6,
-              padding: '10px 12px',
+              padding: '8px 10px',
+              flexShrink: 0,
             }}
           >
             {/* Header with state pill */}
@@ -1178,18 +1219,18 @@ export default function TrafficANPRPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 8,
+                marginBottom: 6,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', color: '#94a3b8' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#94a3b8' }}>
                 PLATE ZOOM — {currentPlate.vehicleType}
               </div>
 
               <span
                 style={{
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: 800,
-                  padding: '2px 8px',
+                  padding: '1px 6px',
                   borderRadius: 4,
                   letterSpacing: '0.05em',
                   background:
@@ -1212,7 +1253,7 @@ export default function TrafficANPRPage() {
                 background: '#020617',
                 border: `2px solid ${currentPlate.isHotlist ? '#ef4444' : '#1e3a5f'}`,
                 borderRadius: 4,
-                height: 120,
+                height: 75,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1234,19 +1275,19 @@ export default function TrafficANPRPage() {
                 <div
                   style={{
                     width: '85%',
-                    height: '70%',
+                    height: '75%',
                     background: '#f8fafc',
                     color: '#0f172a',
                     fontFamily: 'monospace',
                     fontWeight: 900,
-                    fontSize: 26,
+                    fontSize: 20,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 4,
-                    border: '3px solid #0f172a',
+                    border: '2px solid #0f172a',
                     boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.08em',
                   }}
                 >
                   {currentPlate.plate || 'BDR-775'}
@@ -1257,14 +1298,14 @@ export default function TrafficANPRPage() {
               <div
                 style={{
                   position: 'absolute',
-                  bottom: 4,
-                  left: 6,
-                  fontSize: 10,
+                  bottom: 3,
+                  left: 5,
+                  fontSize: 9,
                   fontFamily: 'monospace',
                   fontWeight: 700,
                   color: '#38bdf8',
                   background: 'rgba(2, 6, 23, 0.85)',
-                  padding: '1px 5px',
+                  padding: '1px 4px',
                   borderRadius: 2,
                 }}
               >
@@ -1274,8 +1315,8 @@ export default function TrafficANPRPage() {
           </div>
 
           {/* RECOGNIZED NUMBER Banner */}
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.06em', marginBottom: 4 }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#64748b', letterSpacing: '0.06em', marginBottom: 3 }}>
               RECOGNIZED NUMBER
             </div>
 
@@ -1285,17 +1326,17 @@ export default function TrafficANPRPage() {
                 background: currentPlate.isHotlist ? '#fee2e2' : '#ffffff',
                 border: currentPlate.isHotlist ? '2px solid #ef4444' : '2px solid #cbd5e1',
                 borderRadius: 4,
-                padding: '8px 12px',
+                padding: '4px 8px',
                 textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                boxShadow: '0 3px 8px rgba(0,0,0,0.25)',
               }}
             >
               <div
                 style={{
-                  fontSize: 28,
+                  fontSize: 22,
                   fontWeight: 900,
                   fontFamily: 'monospace',
-                  letterSpacing: '0.12em',
+                  letterSpacing: '0.1em',
                   color: currentPlate.isHotlist ? '#b91c1c' : '#0f172a',
                 }}
               >
@@ -1308,9 +1349,9 @@ export default function TrafficANPRPage() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                marginTop: 6,
-                fontSize: 11,
+                gap: 6,
+                marginTop: 4,
+                fontSize: 10,
                 fontFamily: 'monospace',
                 color: '#94a3b8',
               }}
@@ -1319,9 +1360,9 @@ export default function TrafficANPRPage() {
               <div
                 style={{
                   flex: 1,
-                  height: 8,
+                  height: 6,
                   background: '#1e293b',
-                  borderRadius: 4,
+                  borderRadius: 3,
                   overflow: 'hidden',
                 }}
               >
@@ -1330,7 +1371,7 @@ export default function TrafficANPRPage() {
                     width: `${currentPlate.confidence}%`,
                     height: '100%',
                     background: currentPlate.confidence > 80 ? '#22c55e' : '#f59e0b',
-                    borderRadius: 4,
+                    borderRadius: 3,
                   }}
                 ></div>
               </div>
@@ -1339,43 +1380,43 @@ export default function TrafficANPRPage() {
             </div>
 
             {/* Quick Watchlist Flag / Status Action */}
-            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: 5, display: 'flex', justifyContent: 'center' }}>
               {currentPlate.isHotlist ? (
                 <div
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 10px',
+                    gap: 5,
+                    padding: '3px 8px',
                     borderRadius: 4,
                     background: 'rgba(239, 68, 68, 0.2)',
                     border: '1px solid #ef4444',
                     color: '#f87171',
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: 700,
                   }}
                 >
-                  <ShieldAlert size={14} />
-                  WATCHLIST ACTIVE: {currentPlate.reason || 'Flagged Target'}
+                  <ShieldAlert size={12} />
+                  WATCHLIST: {currentPlate.reason || 'Flagged Target'}
                 </div>
               ) : (
                 <button
                   className="btn btn-sm btn-outline"
                   style={{
-                    fontSize: 11,
-                    padding: '3px 10px',
+                    fontSize: 10,
+                    padding: '2px 8px',
                     borderColor: '#f43f5e',
                     color: '#fb7185',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 5,
+                    gap: 4,
                     background: 'rgba(244, 63, 94, 0.08)',
                     cursor: 'pointer',
                   }}
                   onClick={() => handleAddToWatchlist(currentPlate.plate, 'Flagged from Traffic Feed')}
                   title="Mark this vehicle into the Watchlist / Stolen registry"
                 >
-                  <ShieldAlert size={13} />
+                  <ShieldAlert size={12} />
                   + Flag in Watchlist
                 </button>
               )}
@@ -1383,17 +1424,18 @@ export default function TrafficANPRPage() {
           </div>
 
           {/* RECENT PLATES Feed */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 220 }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: 700,
                 color: '#64748b',
                 letterSpacing: '0.06em',
-                marginBottom: 8,
+                marginBottom: 4,
+                flexShrink: 0,
               }}
             >
               <span>RECENT PLATES</span>
@@ -1402,12 +1444,13 @@ export default function TrafficANPRPage() {
 
             <div
               style={{
+                flex: 1,
+                minHeight: 0,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8,
-                maxHeight: 280,
+                gap: 5,
                 overflowY: 'auto',
-                paddingRight: 4,
+                paddingRight: 3,
               }}
             >
               {recentPlates.map(item => (
@@ -1416,19 +1459,20 @@ export default function TrafficANPRPage() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 6,
+                    gap: 8,
+                    padding: '5px 8px',
+                    borderRadius: 5,
                     background: item.isHotlist ? 'rgba(239, 68, 68, 0.15)' : '#0e1626',
                     border: item.isHotlist ? '1px solid #ef4444' : '1px solid #1e293b',
                     transition: 'all 0.2s',
+                    flexShrink: 0,
                   }}
                 >
                   {/* Plate Thumbnail Crop */}
                   <div
                     style={{
-                      width: 64,
-                      height: 34,
+                      width: 52,
+                      height: 28,
                       borderRadius: 3,
                       background: '#020617',
                       border: '1px solid #334155',
@@ -1452,7 +1496,7 @@ export default function TrafficANPRPage() {
                           height: '80%',
                           background: item.isHotlist ? '#fee2e2' : '#f8fafc',
                           color: item.isHotlist ? '#b91c1c' : '#0f172a',
-                          fontSize: 9,
+                          fontSize: 8,
                           fontFamily: 'monospace',
                           fontWeight: 800,
                           display: 'flex',
@@ -1468,14 +1512,17 @@ export default function TrafficANPRPage() {
 
                   {/* Plate Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span
                         style={{
                           fontFamily: 'monospace',
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: 800,
                           color: item.isHotlist ? '#f87171' : '#f8fafc',
                           letterSpacing: '0.04em',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {item.plate}
@@ -1485,10 +1532,11 @@ export default function TrafficANPRPage() {
                           style={{
                             background: '#ef4444',
                             color: 'white',
-                            fontSize: 9,
+                            fontSize: 8,
                             fontWeight: 800,
-                            padding: '1px 5px',
-                            borderRadius: 4,
+                            padding: '1px 4px',
+                            borderRadius: 3,
+                            flexShrink: 0,
                           }}
                         >
                           STOLEN
@@ -1496,11 +1544,21 @@ export default function TrafficANPRPage() {
                       )}
                     </div>
 
-                    <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontFamily: 'monospace' }}>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: '#64748b',
+                        marginTop: 1,
+                        fontFamily: 'monospace',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {item.vehicleType} &bull; {item.time} &bull; {item.confidence}%
                       {item.reads && item.reads > 1 && (
-                        <span style={{ marginLeft: 6, color: '#38bdf8', fontWeight: 600 }}>
-                          ({item.reads} scans)
+                        <span style={{ marginLeft: 4, color: '#38bdf8', fontWeight: 600 }}>
+                          ({item.reads}x)
                         </span>
                       )}
                     </div>
@@ -1514,16 +1572,16 @@ export default function TrafficANPRPage() {
                           background: 'rgba(239, 68, 68, 0.2)',
                           color: '#f87171',
                           border: '1px solid #ef4444',
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: 800,
-                          padding: '3px 6px',
+                          padding: '2px 5px',
                           borderRadius: 4,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 3,
+                          gap: 2,
                         }}
                       >
-                        <ShieldAlert size={11} /> HOTLIST
+                        <ShieldAlert size={10} /> HOTLIST
                       </span>
                     ) : (
                       <button
@@ -1531,10 +1589,10 @@ export default function TrafficANPRPage() {
                           background: 'transparent',
                           border: '1px solid #334155',
                           color: '#94a3b8',
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: 700,
-                          padding: '3px 7px',
-                          borderRadius: 4,
+                          padding: '2px 5px',
+                          borderRadius: 3,
                           cursor: 'pointer',
                         }}
                         onClick={() => handleAddToWatchlist(item.plate, 'Flagged from Recent Feed')}

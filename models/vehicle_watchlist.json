@@ -1,47 +1,17 @@
 {
   "max_edit_distance": 1,
   "entries": {
-    "MH12DE1433": {
-      "reason": "Stolen Vehicle",
-      "owner": "John Doe",
-      "notes": "Reported Stolen - Crime Bureau, Black SUV",
-      "added_at": 1795031476.3325586
-    },
-    "DL8CAF5030": {
-      "reason": "Suspicious Activity",
-      "owner": "Unknown",
-      "notes": "White Sedan flagged at perimeter",
-      "added_at": 1795031476.3325586
-    },
-    "KA01MJ5014": {
-      "reason": "Expired Registration",
-      "owner": "Transit Authority",
-      "notes": "Commercial fleet vehicle",
-      "added_at": 1795031476.3325586
-    },
-    "HR26DQ5551": {
-      "reason": "Wanted - Robbery Suspect",
-      "owner": "State Police",
-      "notes": "High priority alert",
-      "added_at": 1795031476.3325586
-    },
-    "HUM316": {
-      "reason": "Stolen Vehicle",
-      "owner": "Amber Alert / Transit",
-      "notes": "Silver sedan reported stolen",
-      "added_at": 1795031476.3325586
-    },
-    "KAME3535": {
-      "reason": "Suspicious Activity",
-      "owner": "Flagged Target",
-      "notes": "Vehicle flagged at checkpoint",
-      "added_at": 1795031476.3325586
-    },
     "CH41AW1525": {
       "reason": "Stolen Luxury Sedan",
       "owner": "Crime Branch Delhi",
       "notes": "Test stolen vehicle alert",
       "added_at": 1795031477.6130226
+    },
+    "DL06ZZ0134": {
+      "reason": "Stolen Vehicle",
+      "owner": "unknown",
+      "notes": "rob and run",
+      "added_at": 1795032401.1361926
     }
   }
 }

@@ -122,20 +122,6 @@ class DataStore:
                 acknowledged=False,
                 metadata={"plate": "MH12DE1433", "fuzzy_match": False, "reason": "Stolen Vehicle"},
             ),
-            AlertResponse(
-                id="alert-003",
-                camera_id="cam1",
-                alert_type=AlertType.WEAPON,
-                severity=AlertSeverity.CRITICAL,
-                title="Firearm Threat Detected",
-                description="Threat detector identified handgun held by tracked person.",
-                timestamp=now - 45,
-                bbox=[310.0, 150.0, 420.0, 390.0],
-                track_id=3,
-                global_id=105,
-                acknowledged=False,
-                metadata={"weapon_class": "handgun", "conf": 0.88, "held_by_track": 3},
-            ),
         ]
         for a in sample_alerts:
             self.alerts[a.id] = a

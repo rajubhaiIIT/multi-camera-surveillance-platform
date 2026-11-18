@@ -23,6 +23,8 @@ import {
 export default function Layout() {
   const user = getUser();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isTrafficPage = location.pathname.startsWith('/traffic');
   const [toasts, setToasts] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -127,7 +129,21 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
+      <main
+        className={`main-content ${isTrafficPage ? 'traffic-mode' : ''}`}
+        style={
+          isTrafficPage
+            ? {
+                height: '100vh',
+                maxHeight: '100vh',
+                overflow: 'hidden',
+                padding: '10px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+              }
+            : undefined
+        }
+      >
         <Outlet />
       </main>
 
