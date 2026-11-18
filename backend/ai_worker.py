@@ -623,7 +623,7 @@ class VideoAnalysisManager:
                         # Vehicle styling: cyber cyan/blue or hotlist red
                         if is_traffic_mode:
                             color = (0, 0, 235) if is_hotlist else (255, 180, 50)
-                            label = "VEHICLE"
+                            label = f"{t.cls.upper()} #{t.track_id}"
                             if is_hotlist:
                                 label = f"HOTLIST: {p_info['plate']} \u26A0"
                         else:

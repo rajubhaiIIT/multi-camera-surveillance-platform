@@ -50,7 +50,11 @@ export default function CamerasPage() {
   const canEdit = user?.role === 'admin' || user?.role === 'operator';
 
   const loadCameras = useCallback(() => {
-    getCameras().then(setCameras).catch(() => {});
+    getCameras().then(all => {
+      // Only show general/security cameras — exclude traffic cameras entirely
+      const securityCams = (all || []).filter(c => c.camera_type !== 'traffic');
+      setCameras(securityCams);
+    }).catch(() => {});
     getAvailableVideos().then(setAvailableVideos).catch(() => {});
   }, []);
 

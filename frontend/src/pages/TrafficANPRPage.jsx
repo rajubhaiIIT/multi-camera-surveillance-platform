@@ -26,6 +26,7 @@ import {
   triggerAIAnalysis,
   getAIAnalysisStatus,
   stopAIAnalysis,
+  createCamera,
   getUser,
 } from '../api.js';
 import { useWebSocket } from '../useWebSocket.js';
@@ -113,18 +114,16 @@ export default function TrafficANPRPage() {
   const videoViewportRef = useRef(null);
   const user = getUser();
 
-  // Load cameras and available sample videos
+  // Load ONLY traffic cameras and available sample videos
   const loadData = useCallback(async () => {
     try {
-      const cams = await getCameras();
-      if (Array.isArray(cams) && cams.length > 0) {
-        setCameras(cams);
-        if (!selectedCamId) {
-          // Prefer dedicated traffic camera (cam_traffic) or camera with traffic in type/id
-          const trafficCam = cams.find(c => c.camera_type === 'traffic' || c.id === 'cam_traffic' || c.id.toLowerCase().includes('traffic'))
-            || cams.find(c => c.video_url || c.source_type === 'video_file')
-            || cams[0];
-          setSelectedCamId(trafficCam.id);
+      const allCams = await getCameras();
+      if (Array.isArray(allCams)) {
+        // Only show traffic-type cameras — completely separate from the security Cameras section
+        const trafficCams = allCams.filter(c => c.camera_type === 'traffic');
+        setCameras(trafficCams);
+        if (!selectedCamId && trafficCams.length > 0) {
+          setSelectedCamId(trafficCams[0].id);
         }
       }
     } catch (_) {}
@@ -155,9 +154,9 @@ export default function TrafficANPRPage() {
       });
   }, [selectedCamId]);
 
-  // Handle incoming real-time WebSocket events
+  // Handle incoming real-time WebSocket events (only for selected traffic camera)
   const handleWsMessage = useCallback((msg) => {
-    if (msg.type === 'anpr_detection') {
+    if (msg.type === 'anpr_detection' && msg.camera_id === selectedCamId) {
       const { plate, confidence, country_format, plate_crop, is_hotlist, reason, vehicle_type, vehicles_in_zone } = msg;
 
       if (typeof vehicles_in_zone === 'number') {
@@ -251,6 +250,26 @@ export default function TrafficANPRPage() {
       clearInterval(interval);
     };
   }, [selectedCamId]);
+
+  // Create a new dedicated traffic camera (independent from general cameras section)
+  const handleAddTrafficCam = async () => {
+    const id = `cam_traffic_${Date.now().toString(36)}`;
+    try {
+      await createCamera({
+        id,
+        name: 'Traffic ANPR Feed',
+        rtsp_url: '',
+        location: 'Highway / Road',
+        source_type: 'video_file',
+        camera_type: 'traffic',
+      });
+      await loadData();
+      setSelectedCamId(id);
+      showToast(`Created traffic camera [${id}]. Attach a video to begin.`, 'success');
+    } catch (err) {
+      alert(`Error creating traffic camera: ${err.message}`);
+    }
+  };
 
   // Start traffic AI inference (strictly vehicles & ANPR, no violence/fall)
   const handleStartTrafficAI = async () => {
@@ -384,30 +403,40 @@ export default function TrafficANPRPage() {
           </span>
         </div>
 
-        {/* Camera Selector & Quick Actions */}
+        {/* Traffic Camera Selector & Quick Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8' }}>
-            <Camera size={14} /> Camera Feed:
-            <select
-              value={selectedCamId}
-              onChange={e => setSelectedCamId(e.target.value)}
-              style={{
-                background: '#0f172a',
-                color: '#f8fafc',
-                border: '1px solid #334155',
-                borderRadius: 6,
-                padding: '4px 10px',
-                fontSize: 12,
-                fontFamily: 'monospace',
-                fontWeight: 600,
-              }}
-            >
-              {cameras.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.id} • {c.name}
-                </option>
-              ))}
-            </select>
+            <Camera size={14} /> Traffic Feed:
+            {cameras.length > 0 ? (
+              <select
+                value={selectedCamId}
+                onChange={e => setSelectedCamId(e.target.value)}
+                style={{
+                  background: '#0f172a',
+                  color: '#f8fafc',
+                  border: '1px solid #334155',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  fontWeight: 600,
+                }}
+              >
+                {cameras.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.id} • {c.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <button
+                className="btn btn-sm btn-primary"
+                style={{ fontSize: 11, padding: '3px 10px', fontWeight: 700 }}
+                onClick={handleAddTrafficCam}
+              >
+                + Add Traffic Camera
+              </button>
+            )}
           </div>
 
           {/* Quick attach video if needed */}

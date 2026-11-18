@@ -109,8 +109,9 @@ async def attach_video(camera_id: str, payload: AttachVideoRequest):
         video_url=f"/api/cameras/{camera_id}/video",
         is_active=True,
     ))
+    resolved_mode = getattr(cam, "camera_type", None) or "general"
     try:
-        analysis_manager.start_analysis(camera_id, file_path, loop=True)
+        analysis_manager.start_analysis(camera_id, file_path, mode=resolved_mode, loop=True)
     except Exception:
         pass
     return updated
