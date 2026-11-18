@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useWebSocket(onMessage) {
   const wsRef = useRef(null);
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
   const [connected, setConnected] = useState(false);
   const reconnectTimer = useRef(null);
 
@@ -14,25 +16,28 @@ export function useWebSocket(onMessage) {
 
     ws.onopen = () => {
       setConnected(true);
-      // Subscribe to all alerts
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'alerts' }));
+      // Subscribe to all topics, broadcast events, and alerts
+      try {
+        ws.send(JSON.stringify({ action: 'subscribe', topic: 'all' }));
+        ws.send(JSON.stringify({ action: 'subscribe', topic: 'alerts' }));
+      } catch (_) {}
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (onMessage) onMessage(data);
+        if (onMessageRef.current) onMessageRef.current(data);
       } catch {}
     };
 
     ws.onclose = () => {
       setConnected(false);
-      // Auto-reconnect after 3 seconds
-      reconnectTimer.current = setTimeout(connect, 3000);
+      // Auto-reconnect after 2 seconds
+      reconnectTimer.current = setTimeout(connect, 2000);
     };
 
     ws.onerror = () => { ws.close(); };
-  }, [onMessage]);
+  }, []);
 
   useEffect(() => {
     connect();

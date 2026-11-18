@@ -161,9 +161,24 @@ export default function TrafficANPRPage() {
       });
   }, [selectedCamId]);
 
+  const selectedCamIdRef = useRef(selectedCamId);
+  useEffect(() => {
+    selectedCamIdRef.current = selectedCamId;
+  }, [selectedCamId]);
+
   // Handle incoming real-time WebSocket events (only for selected traffic camera)
   const handleWsMessage = useCallback((msg) => {
-    if (msg.type === 'anpr_detection' && msg.camera_id === selectedCamId) {
+    if (!msg) return;
+    const currentCam = selectedCamIdRef.current;
+    const matchesCam = !currentCam || !msg.camera_id || msg.camera_id === currentCam;
+
+    if (msg.type === 'anpr_zone_update' && matchesCam) {
+      if (typeof msg.vehicles_in_zone === 'number') {
+        setKpiVehicles(msg.vehicles_in_zone);
+      }
+    } else if (msg.type === 'anpr_no_read' && matchesCam) {
+      setKpiNoRead(c => c + 1);
+    } else if (msg.type === 'anpr_detection' && matchesCam) {
       const { plate, confidence, country_format, plate_crop, is_hotlist, reason, vehicle_type, vehicles_in_zone } = msg;
 
       if (typeof vehicles_in_zone === 'number') {

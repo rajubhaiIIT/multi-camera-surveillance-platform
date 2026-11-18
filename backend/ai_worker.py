@@ -498,16 +498,23 @@ class VideoAnalysisManager:
                                 bx1, by1, bx2, by2 = [int(v) for v in t.bbox]
                                 vx = (bx1 + bx2) / 2.0
                                 vy = float(by2)
-                                # Check if vehicle bottom or center intersects user-defined zone
-                                in_z = (cv2.pointPolygonTest(zone_pts, (vx, vy), False) >= 0 or
-                                        cv2.pointPolygonTest(zone_pts, (vx, (by1 + by2) / 2.0), False) >= 0)
+                                cy = (by1 + by2) / 2.0
+                                # Robust intersection check: bottom, center, top or polygon corners in vehicle box
+                                in_z = (
+                                    cv2.pointPolygonTest(zone_pts, (vx, vy), False) >= 0 or
+                                    cv2.pointPolygonTest(zone_pts, (vx, cy), False) >= 0 or
+                                    cv2.pointPolygonTest(zone_pts, (vx, float(by1)), False) >= 0 or
+                                    cv2.pointPolygonTest(zone_pts, (float(bx1), cy), False) >= 0 or
+                                    cv2.pointPolygonTest(zone_pts, (float(bx2), cy), False) >= 0 or
+                                    any(bx1 <= p[0] <= bx2 and by1 <= p[1] <= by2 for p in zone_pts)
+                                )
                                 if in_z:
                                     vehicles_in_zone += 1
                                     tracks_in_zone.add(t.track_id)
 
                                     if plate_reader is not None:
                                         existing = track_plates.get(t.track_id)
-                                        should_scan = (existing is None) or (frame_idx % 12 == 0 and existing.get("conf", 0) < 0.90)
+                                        should_scan = (existing is None) or (frame_idx % 8 == 0 and existing.get("conf", 0) < 0.90)
                                         if should_scan:
                                             try:
                                                 prec = plate_reader.process_vehicle(frame, t.bbox)
@@ -573,8 +580,43 @@ class VideoAnalysisManager:
                                                             alerts_count += 1
                                                             ws_manager.broadcast_alert_sync(created_alert.model_dump())
                                                             logger.warning("[AI ALERT] Watchlist Vehicle (%s) detected in zone on %s!", prec.text, camera_id)
+                                                else:
+                                                    # Record attempt for unread vehicle
+                                                    attempts = getattr(t, "_anpr_attempts", 0) + 1
+                                                    setattr(t, "_anpr_attempts", attempts)
+                                                    if attempts == 3:
+                                                        ws_manager.broadcast_sync({
+                                                            "type": "anpr_no_read",
+                                                            "camera_id": camera_id,
+                                                            "track_id": t.track_id,
+                                                            "vehicles_in_zone": vehicles_in_zone,
+                                                        })
                                             except Exception as anpr_err:
                                                 logger.debug("ANPR scan error on %s: %s", camera_id, anpr_err)
+                                        elif existing and existing.get("plate") and (frame_idx % 15 == 0):
+                                            # Keep-alive detection update while vehicle remains inside zone
+                                            ws_manager.broadcast_sync({
+                                                "type": "anpr_detection",
+                                                "camera_id": camera_id,
+                                                "track_id": t.track_id,
+                                                "plate": existing["plate"],
+                                                "confidence": round(float(existing.get("conf", 0.85)) * 100, 1),
+                                                "country_format": existing.get("format", "IND"),
+                                                "plate_crop": existing.get("crop", ""),
+                                                "is_hotlist": existing.get("is_hotlist", False),
+                                                "reason": existing.get("reason", ""),
+                                                "vehicle_type": t.cls,
+                                                "timestamp": now_wall,
+                                                "vehicles_in_zone": vehicles_in_zone,
+                                            })
+
+                    # Broadcast active vehicles count in zone every 4 frames
+                    if frame_idx % 4 == 0:
+                        ws_manager.broadcast_sync({
+                            "type": "anpr_zone_update",
+                            "camera_id": camera_id,
+                            "vehicles_in_zone": vehicles_in_zone,
+                        })
                 else:
                     # General camera mode: scan vehicles anywhere in frame if present, without zone restriction
                     if plate_reader is not None and tracks:
