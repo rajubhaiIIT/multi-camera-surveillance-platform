@@ -154,16 +154,20 @@ class DataStore:
         if json_path.exists():
             try:
                 data = json.loads(json_path.read_text(encoding="utf-8"))
-                for p, meta in data.items():
-                    self.watchlist[p] = WatchlistPlateResponse(
-                        plate=p,
-                        reason=meta.get("reason", "Watchlist"),
-                        owner=meta.get("owner", "Unknown"),
-                        notes=meta.get("notes", ""),
-                        added_at=meta.get("added_at", now),
-                    )
-            except Exception:
-                pass
+                entries = data.get("entries") if isinstance(data, dict) and "entries" in data else data
+                if isinstance(entries, dict):
+                    for p, meta in entries.items():
+                        if isinstance(meta, dict):
+                            norm_p = p.upper().replace(" ", "").replace("-", "").replace(".", "")
+                            self.watchlist[norm_p] = WatchlistPlateResponse(
+                                plate=norm_p,
+                                reason=meta.get("reason", "Watchlist"),
+                                owner=meta.get("owner", "Unknown"),
+                                notes=meta.get("notes", ""),
+                                added_at=meta.get("added_at", now),
+                            )
+            except Exception as e:
+                logger.warning("Failed loading vehicle watchlist: %s", e)
 
     # ---------------------------------------------------------------- Cameras
     def list_cameras(self) -> list[CameraResponse]:
@@ -371,24 +375,85 @@ class DataStore:
     def list_watchlist(self) -> list[WatchlistPlateResponse]:
         return list(self.watchlist.values())
 
+    def _save_watchlist_to_disk(self):
+        """Persist in-memory watchlist to models/vehicle_watchlist.json."""
+        try:
+            json_path = Path(__file__).resolve().parents[1] / "models" / "vehicle_watchlist.json"
+            json_path.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "max_edit_distance": 1,
+                "entries": {
+                    item.plate: {
+                        "reason": item.reason,
+                        "owner": item.owner,
+                        "notes": item.notes,
+                        "added_at": item.added_at,
+                    }
+                    for item in self.watchlist.values()
+                },
+            }
+            json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception as e:
+            logger.warning("Failed writing watchlist to disk: %s", e)
+
     def add_watchlist_plate(self, item: WatchlistPlateCreate) -> WatchlistPlateResponse:
-        norm_plate = item.plate.upper().replace(" ", "").replace("-", "")
+        norm_plate = item.plate.upper().replace(" ", "").replace("-", "").replace(".", "")
         res = WatchlistPlateResponse(
             plate=norm_plate,
             reason=item.reason,
-            owner=item.owner,
-            notes=item.notes,
+            owner=item.owner or "Unknown",
+            notes=item.notes or "",
             added_at=time.time(),
         )
         self.watchlist[norm_plate] = res
+        self._save_watchlist_to_disk()
         return res
 
     def remove_watchlist_plate(self, plate: str) -> bool:
-        norm_plate = plate.upper().replace(" ", "").replace("-", "")
+        norm_plate = plate.upper().replace(" ", "").replace("-", "").replace(".", "")
         if norm_plate in self.watchlist:
             del self.watchlist[norm_plate]
+            self._save_watchlist_to_disk()
             return True
         return False
+
+    def match_watchlist(self, plate: str, max_edit_distance: int = 1) -> WatchlistPlateResponse | None:
+        """Check if plate matches any entry in the watchlist via exact or fuzzy matching."""
+        if not plate:
+            return None
+        norm = plate.upper().replace(" ", "").replace("-", "").replace(".", "")
+        if not norm:
+            return None
+
+        # 1. Exact match in indexed keys
+        if norm in self.watchlist:
+            return self.watchlist[norm]
+
+        # 2. Case-insensitive / whitespace-stripped scan
+        for hot_p, entry in self.watchlist.items():
+            clean_hot = hot_p.upper().replace(" ", "").replace("-", "").replace(".", "")
+            if clean_hot == norm:
+                return entry
+
+        # 3. Fuzzy matching (Levenshtein distance <= max_edit_distance for plates >= 5 chars)
+        if max_edit_distance > 0 and len(norm) >= 5:
+            for hot_p, entry in self.watchlist.items():
+                clean_hot = hot_p.upper().replace(" ", "").replace("-", "").replace(".", "")
+                if abs(len(clean_hot) - len(norm)) <= max_edit_distance:
+                    # Levenshtein distance check
+                    s1, s2 = clean_hot, norm
+                    if len(s1) < len(s2):
+                        s1, s2 = s2, s1
+                    prev = list(range(len(s2) + 1))
+                    for i, c1 in enumerate(s1):
+                        curr = [i + 1]
+                        for j, c2 in enumerate(s2):
+                            curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (c1 != c2)))
+                        prev = curr
+                    if prev[-1] <= max_edit_distance:
+                        return entry
+
+        return None
 
     # ---------------------------------------------------------------- Health / Stats
     def check_service_port(self, host: str, port: int, timeout: float = 0.5) -> bool:

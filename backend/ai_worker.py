@@ -539,7 +539,7 @@ class VideoAnalysisManager:
                                                     camera_plate_sightings[clean_p] = now_wall
                                                     track_recorded_plates[t.track_id] = clean_p
 
-                                                    is_match = watchlist.match(prec.text) if watchlist else None
+                                                    is_match = store.match_watchlist(prec.text)
                                                     is_hotlist = is_match is not None
                                                     reason = is_match.reason if is_match else ""
 
@@ -586,8 +586,8 @@ class VideoAnalysisManager:
                                                     }
                                                     ws_manager.broadcast_sync(anpr_packet)
 
-                                                    if is_hotlist and is_new_capture:
-                                                        alert_key = ("watchlist_plate", camera_id, t.track_id, prec.text)
+                                                    if is_hotlist:
+                                                        alert_key = ("watchlist_plate", camera_id, t.track_id, clean_p)
                                                         if now_wall - last_alert_time.get(alert_key, 0) > 8.0:
                                                             last_alert_time[alert_key] = now_wall
                                                             alert_in = AlertCreate(
@@ -653,7 +653,7 @@ class VideoAnalysisManager:
                                     try:
                                         prec = plate_reader.process_vehicle(frame, t.bbox)
                                         if prec and prec.text:
-                                            is_match = watchlist.match(prec.text) if watchlist else None
+                                            is_match = store.match_watchlist(prec.text)
                                             if is_match:
                                                 track_plates[t.track_id] = {
                                                     "plate": prec.text,

@@ -35,6 +35,8 @@ import {
   getUser,
   getAnprEngine,
   setAnprEngine,
+  addWatchlistPlate,
+  getWatchlist,
 } from '../api.js';
 import { useWebSocket } from '../useWebSocket.js';
 
@@ -123,7 +125,13 @@ export default function TrafficANPRPage() {
   const [anprEngine, setAnprEngineState] = useState('cct_s');
   const videoViewportRef = useRef(null);
   const seenPlatesRef = useRef(new Map());
+  const lastHotlistAlertRef = useRef(new Map());
   const user = getUser();
+
+  const showToast = useCallback((msg, type = 'info') => {
+    setNotification({ msg, type, id: Date.now() });
+    setTimeout(() => setNotification(null), 6500);
+  }, []);
 
   // Load ONLY traffic cameras, available sample videos, and active ANPR engine
   const loadData = useCallback(async () => {
@@ -156,10 +164,26 @@ export default function TrafficANPRPage() {
     try {
       await setAnprEngine(newEngine);
       setAnprEngineState(newEngine);
-      setNotification(`Switched ANPR OCR Model to: ${newEngine.toUpperCase()}`);
-      setTimeout(() => setNotification(null), 4000);
+      showToast(`Switched ANPR OCR Model to: ${newEngine.toUpperCase()}`, 'info');
     } catch (err) {
       console.error('Failed to switch engine:', err);
+    }
+  };
+
+  const handleAddToWatchlist = async (plateText, defaultReason = 'Flagged by Operator') => {
+    if (!plateText || plateText === 'UNKNOWN') return;
+    try {
+      await addWatchlistPlate({
+        plate: plateText,
+        reason: defaultReason,
+        owner: 'Traffic Camera Operator',
+        notes: 'Flagged from Traffic ANPR live monitoring screen',
+      });
+      showToast(`Vehicle [${plateText}] enrolled into Watchlist!`, 'success');
+      setCurrentPlate(prev => (prev.plate === plateText ? { ...prev, isHotlist: true, reason: defaultReason } : prev));
+      setRecentPlates(prev => prev.map(p => (p.plate === plateText ? { ...p, isHotlist: true, reason: defaultReason } : p)));
+    } catch (err) {
+      showToast(`Failed to add plate to watchlist: ${err.message}`, 'critical');
     }
   };
 
@@ -277,21 +301,30 @@ export default function TrafficANPRPage() {
         ]);
 
         if (isHot) {
-          showToast(`🚨 HOTLIST DETECTED: [${plate}] matches stolen vehicle registry!`, 'critical');
+          const lastAlert = lastHotlistAlertRef.current.get(cleanPlate) || 0;
+          if (nowMs - lastAlert > 8000) {
+            lastHotlistAlertRef.current.set(cleanPlate, nowMs);
+            showToast(`🚨 WATCHLIST HIT: Plate [${plate}] flagged as ${reason || 'Stolen / Wanted'}!`, 'critical');
+          }
         }
       }
-    } else if (msg.type === 'alert' && msg.payload?.alert_type === 'watchlist_plate') {
-      const p = msg.payload.metadata?.plate || 'STOLEN VEHICLE';
-      showToast(`⚠ Stolen Vehicle Plate Alert: ${p}`, 'critical');
+
+      // Ensure any hotlist vehicle triggers alert toast even during continuous region tracking
+      if (isHot) {
+        const lastAlert = lastHotlistAlertRef.current.get(cleanPlate) || 0;
+        if (nowMs - lastAlert > 8000) {
+          lastHotlistAlertRef.current.set(cleanPlate, nowMs);
+          showToast(`🚨 WATCHLIST HIT: Plate [${plate}] flagged as ${reason || 'Stolen / Wanted'}!`, 'critical');
+        }
+      }
+    } else if (msg.type === 'alert' && (msg.payload?.alert_type === 'watchlist_plate' || msg.payload?.title?.includes('WATCHLIST'))) {
+      const p = msg.payload?.metadata?.plate || msg.payload?.title || 'HOTLIST VEHICLE';
+      const r = msg.payload?.metadata?.reason || msg.payload?.description || 'Stolen Vehicle Hit';
+      showToast(`🚨 WATCHLIST ALERT: ${p} (${r})`, 'critical');
     }
   }, []);
 
   useWebSocket(handleWsMessage);
-
-  const showToast = (msg, type = 'info') => {
-    setNotification({ msg, type, id: Date.now() });
-    setTimeout(() => setNotification(null), 6000);
-  };
 
   // Save modified zone to backend
   const handleSaveZone = async () => {
@@ -1304,6 +1337,49 @@ export default function TrafficANPRPage() {
               <span style={{ fontWeight: 700, color: '#f8fafc' }}>{currentPlate.confidence}%</span>
               <span style={{ color: '#64748b' }}>reads: {currentPlate.reads}</span>
             </div>
+
+            {/* Quick Watchlist Flag / Status Action */}
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+              {currentPlate.isHotlist ? (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px',
+                    borderRadius: 4,
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid #ef4444',
+                    color: '#f87171',
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}
+                >
+                  <ShieldAlert size={14} />
+                  WATCHLIST ACTIVE: {currentPlate.reason || 'Flagged Target'}
+                </div>
+              ) : (
+                <button
+                  className="btn btn-sm btn-outline"
+                  style={{
+                    fontSize: 11,
+                    padding: '3px 10px',
+                    borderColor: '#f43f5e',
+                    color: '#fb7185',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'rgba(244, 63, 94, 0.08)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleAddToWatchlist(currentPlate.plate, 'Flagged from Traffic Feed')}
+                  title="Mark this vehicle into the Watchlist / Stolen registry"
+                >
+                  <ShieldAlert size={13} />
+                  + Flag in Watchlist
+                </button>
+              )}
+            </div>
           </div>
 
           {/* RECENT PLATES Feed */}
@@ -1428,6 +1504,45 @@ export default function TrafficANPRPage() {
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Watchlist Action */}
+                  <div style={{ flexShrink: 0 }}>
+                    {item.isHotlist ? (
+                      <span
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.2)',
+                          color: '#f87171',
+                          border: '1px solid #ef4444',
+                          fontSize: 9,
+                          fontWeight: 800,
+                          padding: '3px 6px',
+                          borderRadius: 4,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                        }}
+                      >
+                        <ShieldAlert size={11} /> HOTLIST
+                      </span>
+                    ) : (
+                      <button
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #334155',
+                          color: '#94a3b8',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '3px 7px',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => handleAddToWatchlist(item.plate, 'Flagged from Recent Feed')}
+                        title="Add this plate to Watchlist"
+                      >
+                        + Flag
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
