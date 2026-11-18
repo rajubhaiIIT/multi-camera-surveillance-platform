@@ -233,6 +233,9 @@ class DataStore:
             del self.cameras[camera_id]
             self.camera_videos.pop(camera_id, None)
             self.camera_zones.pop(camera_id, None)
+            # Purge all stored alerts and events associated with this camera
+            self.alerts = {k: v for k, v in self.alerts.items() if v.camera_id != camera_id}
+            self.events = [e for e in self.events if e.camera_id != camera_id]
             return True
         return False
 

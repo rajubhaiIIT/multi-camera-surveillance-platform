@@ -15,6 +15,7 @@ import {
   Check,
   UploadCloud,
   Loader2,
+  Trash2,
   Maximize2,
   Minimize2,
   ExternalLink,
@@ -29,6 +30,7 @@ import {
   getAIAnalysisStatus,
   stopAIAnalysis,
   createCamera,
+  deleteCamera,
   uploadCameraVideo,
   getUser,
 } from '../api.js';
@@ -276,6 +278,21 @@ export default function TrafficANPRPage() {
     }
   };
 
+  // Delete selected traffic camera
+  const handleDeleteTrafficCam = async () => {
+    if (!selectedCamId) return;
+    if (!confirm(`Delete traffic camera ${selectedCamId}? This will halt all AI processing and purge its alerts.`)) return;
+    try {
+      await stopAIAnalysis(selectedCamId).catch(() => {});
+      await deleteCamera(selectedCamId);
+      setSelectedCamId('');
+      await loadData();
+      showToast(`Deleted traffic camera [${selectedCamId}].`, 'info');
+    } catch (err) {
+      alert(`Delete error: ${err.message}`);
+    }
+  };
+
   // Start traffic AI inference (strictly vehicles & ANPR, no violence/fall)
   const handleStartTrafficAI = async () => {
     if (!selectedCamId) return;
@@ -476,6 +493,16 @@ export default function TrafficANPRPage() {
                 onClick={handleAddTrafficCam}
               >
                 + Add Traffic Camera
+              </button>
+            )}
+            {selectedCamId && (
+              <button
+                className="btn btn-sm btn-outline"
+                style={{ padding: '4px 6px', color: '#f87171', borderColor: '#475569' }}
+                onClick={handleDeleteTrafficCam}
+                title={`Delete traffic camera ${selectedCamId}`}
+              >
+                <Trash2 size={13} />
               </button>
             )}
           </div>

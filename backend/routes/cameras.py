@@ -252,6 +252,9 @@ async def stream_annotated_feed(camera_id: str):
             await asyncio.sleep(0.1)
 
         while True:
+            # Terminate streaming generator if camera was removed
+            if not store.get_camera(camera_id):
+                break
             fb = analysis_manager.get_latest_frame(camera_id)
             if fb and fb != last_frame_bytes:
                 last_frame_bytes = fb
@@ -292,8 +295,11 @@ async def update_camera(camera_id: str, cam_in: CameraUpdate):
     return updated
 
 
-@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_role([UserRole.ADMIN]))])
+@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_role([UserRole.ADMIN, UserRole.OPERATOR]))])
 async def delete_camera(camera_id: str):
+    # Completely stop and purge background AI perception worker
+    analysis_manager.stop_analysis(camera_id)
+    analysis_manager.remove_camera_worker(camera_id)
     if not store.delete_camera(camera_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Camera '{camera_id}' not found")
     return None

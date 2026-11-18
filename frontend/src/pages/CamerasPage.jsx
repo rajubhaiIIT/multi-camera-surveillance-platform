@@ -209,8 +209,17 @@ export default function CamerasPage() {
   }
 
   async function handleDelete(id) {
-    if (!confirm(`Delete camera ${id}?`)) return;
-    try { await deleteCamera(id); loadCameras(); } catch (err) { alert(err.message); }
+    if (!confirm(`Delete camera ${id}? This will halt all AI processing and purge its alerts.`)) return;
+    try {
+      await stopAIAnalysis(id).catch(() => {});
+      await deleteCamera(id);
+      setAnalysisStatuses(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      loadCameras();
+    } catch (err) { alert(err.message); }
   }
 
   return (
@@ -449,8 +458,8 @@ export default function CamerasPage() {
                       <span><Video size={11} /> {cam.fps} FPS ({cam.source_type || 'rtsp'})</span>
                     </div>
                   </div>
-                  {canEdit && user?.role === 'admin' && (
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cam.id)}>
+                  {canEdit && (
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cam.id)} title="Delete camera and halt AI worker">
                       <Trash2 size={12} />
                     </button>
                   )}

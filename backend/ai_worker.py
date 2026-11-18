@@ -97,6 +97,17 @@ class VideoAnalysisManager:
                 return True
         return False
 
+    def remove_camera_worker(self, camera_id: str):
+        """Completely halt and clean up all worker resources for a deleted camera."""
+        with self._lock:
+            if camera_id in self._stop_flags:
+                self._stop_flags[camera_id].set()
+            self._stop_flags.pop(camera_id, None)
+            self._threads.pop(camera_id, None)
+            self.jobs.pop(camera_id, None)
+            self._latest_frames.pop(camera_id, None)
+            self.zones.pop(camera_id, None)
+
     def stop_all(self):
         """Halt all active background video analysis workers."""
         with self._lock:
@@ -291,6 +302,11 @@ class VideoAnalysisManager:
 
         try:
             while not stop_event.is_set():
+                # If camera was removed from store, terminate worker thread immediately
+                if not store.get_camera(camera_id):
+                    logger.info("Camera %s was removed from store. Terminating worker thread.", camera_id)
+                    break
+
                 ok, frame = cap.read()
                 if not ok:
                     if loop and not stop_event.is_set():
