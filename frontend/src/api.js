@@ -115,6 +115,8 @@ export const getVehicleSightings = (params) => {
   if (params) Object.entries(params).forEach(([k, v]) => { if (v != null) qs.set(k, v); });
   return request('GET', `/vehicles/sightings?${qs}`);
 };
+export const getAnprEngine = () => request('GET', '/vehicles/anpr/engine');
+export const setAnprEngine = (engine) => request('POST', `/vehicles/anpr/engine?engine=${encodeURIComponent(engine)}`);
 
 /* ─── Stats & Health ─── */
 export const getStats = () => request('GET', '/stats');

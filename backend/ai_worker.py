@@ -280,11 +280,13 @@ class VideoAnalysisManager:
         try:
             from ai.vehicles.anpr import LicensePlateReader
             from ai.vehicles.index import PlateIndex
-            plate_reader = LicensePlateReader(engine="auto")
+            import os
+            anpr_engine = os.environ.get("ANPR_ENGINE", "cct_s")
+            plate_reader = LicensePlateReader(engine=anpr_engine)
             w_path = Path("models/vehicle_watchlist.json")
             if w_path.exists():
                 watchlist = PlateIndex.load(w_path)
-            logger.info("Loaded ANPR Plate Recognition engine for %s", camera_id)
+            logger.info("Loaded ANPR Plate Recognition engine (%s) for %s", plate_reader.active_engine, camera_id)
         except Exception as e:
             logger.debug("ANPR plate reader init note for %s: %s", camera_id, e)
 
@@ -513,6 +515,10 @@ class VideoAnalysisManager:
                                     tracks_in_zone.add(t.track_id)
 
                                     if plate_reader is not None:
+                                        target_eng = os.environ.get("ANPR_ENGINE", "cct_s").lower().strip()
+                                        if getattr(plate_reader, "requested_engine", None) != target_eng:
+                                            plate_reader.set_engine(target_eng)
+
                                         existing = track_plates.get(t.track_id)
                                         should_scan = (existing is None) or (frame_idx % 8 == 0 and existing.get("conf", 0) < 0.90)
                                         if should_scan:

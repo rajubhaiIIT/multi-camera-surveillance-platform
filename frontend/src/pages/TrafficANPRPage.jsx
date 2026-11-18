@@ -33,6 +33,8 @@ import {
   deleteCamera,
   uploadCameraVideo,
   getUser,
+  getAnprEngine,
+  setAnprEngine,
 } from '../api.js';
 import { useWebSocket } from '../useWebSocket.js';
 
@@ -118,10 +120,11 @@ export default function TrafficANPRPage() {
   ]);
 
   const [notification, setNotification] = useState(null);
+  const [anprEngine, setAnprEngineState] = useState('cct_s');
   const videoViewportRef = useRef(null);
   const user = getUser();
 
-  // Load ONLY traffic cameras and available sample videos
+  // Load ONLY traffic cameras, available sample videos, and active ANPR engine
   const loadData = useCallback(async () => {
     try {
       const allCams = await getCameras();
@@ -139,7 +142,25 @@ export default function TrafficANPRPage() {
       const vids = await getAvailableVideos();
       if (Array.isArray(vids)) setAvailableVideos(vids);
     } catch (_) {}
+
+    try {
+      const engData = await getAnprEngine();
+      if (engData?.active_engine) {
+        setAnprEngineState(engData.active_engine);
+      }
+    } catch (_) {}
   }, [selectedCamId]);
+
+  const handleSwitchEngine = async (newEngine) => {
+    try {
+      await setAnprEngine(newEngine);
+      setAnprEngineState(newEngine);
+      setNotification(`Switched ANPR OCR Model to: ${newEngine.toUpperCase()}`);
+      setTimeout(() => setNotification(null), 4000);
+    } catch (err) {
+      console.error('Failed to switch engine:', err);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -574,6 +595,32 @@ export default function TrafficANPRPage() {
             {isUploading ? <Loader2 size={13} className="spin" /> : <UploadCloud size={13} />}
             {isUploading ? 'Uploading...' : 'Upload Video'}
           </button>
+
+          {/* ANPR OCR Model Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>OCR:</span>
+            <select
+              style={{
+                background: '#0f172a',
+                color: '#38bdf8',
+                border: '1px solid #0284c7',
+                borderRadius: 6,
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+              value={anprEngine}
+              onChange={e => handleSwitchEngine(e.target.value)}
+              title="Select ANPR neural engine (New high-accuracy model or preserved legacy model)"
+            >
+              <option value="cct_s">⚡ CCT-S v2 (High-Accuracy New Model)</option>
+              <option value="cct_xs">🛡️ CCT-XS v2 (Original Legacy Model)</option>
+              <option value="easyocr">🔍 EasyOCR (PyTorch GPU CRAFT)</option>
+              <option value="mobile_vit">🌐 MobileViT-v2 Global</option>
+            </select>
+          </div>
 
           {/* AI Perception Status & Start/Stop Controls */}
           {aiStatus?.status === 'running' || aiStatus?.status === 'live' ? (
