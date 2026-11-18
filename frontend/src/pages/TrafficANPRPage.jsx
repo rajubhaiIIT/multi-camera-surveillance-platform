@@ -13,6 +13,8 @@ import {
   Zap,
   RotateCcw,
   Check,
+  UploadCloud,
+  Loader2,
   Maximize2,
   Minimize2,
   ExternalLink,
@@ -27,6 +29,7 @@ import {
   getAIAnalysisStatus,
   stopAIAnalysis,
   createCamera,
+  uploadCameraVideo,
   getUser,
 } from '../api.js';
 import { useWebSocket } from '../useWebSocket.js';
@@ -45,6 +48,8 @@ export default function TrafficANPRPage() {
   const [availableVideos, setAvailableVideos] = useState([]);
   const [feedMode, setFeedMode] = useState('stream'); // 'stream' or 'video'
   const [aiStatus, setAiStatus] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Zone configuration state
   const [isEditingZone, setIsEditingZone] = useState(false);
@@ -309,6 +314,42 @@ export default function TrafficANPRPage() {
     }
   };
 
+  // Upload video file directly to traffic camera
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const targetCamId = selectedCamId || 'cam_traffic';
+    const targetCam = cameras.find(c => c.id === targetCamId) || {
+      id: targetCamId,
+      name: 'Expressway Traffic & ANPR',
+      location: 'Highway Corridor - Zone 4',
+    };
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('camera_id', targetCamId);
+    formData.append('name', targetCam.name || 'Traffic ANPR Feed');
+    formData.append('location', targetCam.location || 'Highway Corridor');
+    formData.append('fps', '30');
+    formData.append('camera_type', 'traffic');
+    formData.append('auto_analyze', 'true');
+
+    try {
+      setIsUploading(true);
+      showToast(`Uploading ${file.name} to traffic camera...`, 'info');
+      await uploadCameraVideo(formData);
+      await loadData();
+      setSelectedCamId(targetCamId);
+      showToast(`Uploaded ${file.name}! Traffic AI running (car IDs & plates only).`, 'success');
+    } catch (err) {
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Interactive SVG Polygon Dragging Handlers
   const handlePointerDown = (index, e) => {
     e.preventDefault();
@@ -463,6 +504,34 @@ export default function TrafficANPRPage() {
               ))}
             </select>
           )}
+
+          {/* Direct Video Upload to Traffic Camera */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="video/*"
+            style={{ display: 'none' }}
+            onChange={handleFileSelect}
+          />
+          <button
+            className="btn btn-sm btn-primary"
+            style={{
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              background: '#0284c7',
+              borderColor: '#0284c7',
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            title="Upload an MP4/video file directly from your computer to this traffic camera"
+          >
+            {isUploading ? <Loader2 size={13} className="spin" /> : <UploadCloud size={13} />}
+            {isUploading ? 'Uploading...' : 'Upload Video'}
+          </button>
 
           {/* AI Perception Status & Start/Stop Controls */}
           {aiStatus?.status === 'running' || aiStatus?.status === 'live' ? (
@@ -682,9 +751,18 @@ export default function TrafficANPRPage() {
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>
                   No video feed attached to {selectedCam.id}
                 </div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>
-                  Attach a sample video from the top bar dropdown to begin live ANPR monitoring.
+                <div style={{ fontSize: 12, marginTop: 4, marginBottom: 16 }}>
+                  Upload a traffic video file or attach an existing sample to begin live ANPR monitoring.
                 </div>
+                <button
+                  className="btn btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, background: '#0284c7', borderColor: '#0284c7' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? <Loader2 size={14} className="spin" /> : <UploadCloud size={14} />}
+                  {isUploading ? 'Uploading Video...' : 'Upload Video to Traffic Cam'}
+                </button>
               </div>
             )}
 

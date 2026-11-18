@@ -109,7 +109,7 @@ class VideoAnalysisManager:
         self,
         camera_id: str,
         video_path: str | Path,
-        mode: str = "all",
+        mode: str = "general",
         max_frames: Optional[int] = None,
         conf_threshold: float = 0.25,
         loop: bool = True,
@@ -118,6 +118,15 @@ class VideoAnalysisManager:
         path = Path(video_path)
         if not path.exists():
             raise FileNotFoundError(f"Video file not found: {path}")
+
+        # Strict mode resolution: traffic cameras always run in traffic mode
+        try:
+            cam_obj = store.get_camera(camera_id)
+            if (cam_obj and getattr(cam_obj, "camera_type", None) == "traffic") or ("traffic" in camera_id.lower()):
+                mode = "traffic"
+        except Exception:
+            if "traffic" in camera_id.lower():
+                mode = "traffic"
 
         # Stop existing job if already running
         self.stop_analysis(camera_id)
@@ -199,6 +208,14 @@ class VideoAnalysisManager:
         last_alert_time: Dict[tuple, float] = {}
 
         is_traffic_mode = (mode == "traffic")
+        if not is_traffic_mode:
+            try:
+                cam_obj = store.get_camera(camera_id)
+                if (cam_obj and getattr(cam_obj, "camera_type", None) == "traffic") or ("traffic" in camera_id.lower()):
+                    is_traffic_mode = True
+            except Exception:
+                if "traffic" in camera_id.lower():
+                    is_traffic_mode = True
 
         try:
             from ai.yolo_tracker import Tracker
@@ -315,7 +332,7 @@ class VideoAnalysisManager:
                         )
                         store.add_event(ev_in)
                         events_count += 1
-                else:
+                elif not is_traffic_mode:
                     h, w = frame.shape[:2]
                     ev_in = EventCreate(
                         camera_id=camera_id,

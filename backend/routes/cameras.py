@@ -46,6 +46,7 @@ async def upload_camera_video(
     name: str = Form(...),
     location: str = Form("Main Campus"),
     fps: float = Form(30.0),
+    camera_type: str = Form("general"),
     auto_analyze: bool = Form(True),
 ):
     """Upload a video file from the browser and attach it to a new or existing camera."""
@@ -65,6 +66,7 @@ async def upload_camera_video(
             location=location,
             fps=fps,
             source_type="video_file",
+            camera_type=camera_type,
             video_url=f"/api/cameras/{camera_id}/video",
             is_active=True,
         ))
@@ -76,6 +78,7 @@ async def upload_camera_video(
             location=location,
             fps=fps,
             source_type="video_file",
+            camera_type=camera_type,
             video_url=f"/api/cameras/{camera_id}/video",
             rtsp_url=f"{settings.mediamtx_rtsp_base}/{camera_id}",
             is_active=True,
@@ -84,8 +87,9 @@ async def upload_camera_video(
 
     # Automatically trigger continuous background AI analysis on the uploaded video
     if auto_analyze:
+        resolved_mode = "traffic" if camera_type == "traffic" or "traffic" in camera_id.lower() else "general"
         try:
-            analysis_manager.start_analysis(camera_id, dest_path, loop=True)
+            analysis_manager.start_analysis(camera_id, dest_path, mode=resolved_mode, loop=True)
         except Exception:
             pass
 
@@ -109,7 +113,7 @@ async def attach_video(camera_id: str, payload: AttachVideoRequest):
         video_url=f"/api/cameras/{camera_id}/video",
         is_active=True,
     ))
-    resolved_mode = getattr(cam, "camera_type", None) or "general"
+    resolved_mode = "traffic" if getattr(cam, "camera_type", None) == "traffic" or "traffic" in camera_id.lower() else "general"
     try:
         analysis_manager.start_analysis(camera_id, file_path, mode=resolved_mode, loop=True)
     except Exception:
