@@ -138,17 +138,24 @@ async def set_camera_zone(camera_id: str, payload: ZoneUpdateRequest):
 async def trigger_ai_analysis(
     camera_id: str,
     max_frames: int | None = None,
+    mode: str | None = None,
     current_user: Annotated[UserResponse, Depends(get_current_user)] = None,
 ):
-    """Trigger background AI inference (YOLO tracking, fall detection, weapons) on camera feed."""
+    """Trigger background AI inference (YOLO tracking, fall/weapons or ANPR traffic) on camera feed."""
     cam = store.get_camera(camera_id)
     if not cam:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Camera '{camera_id}' not found")
 
+    resolved_mode = mode or getattr(cam, "camera_type", None) or ("traffic" if "traffic" in camera_id.lower() else "general")
+
     filename = store.get_camera_video(camera_id)
     v_dir = Path(__file__).resolve().parents[2] / "data" / "sample_videos"
     if not filename:
-        if (v_dir / "sample.mp4").exists():
+        fallback_vid = "final_indian_plates.mp4" if resolved_mode == "traffic" else "sample.mp4"
+        if (v_dir / fallback_vid).exists():
+            filename = fallback_vid
+            store.set_camera_video(camera_id, filename)
+        elif (v_dir / "sample.mp4").exists():
             filename = "sample.mp4"
             store.set_camera_video(camera_id, filename)
         else:
@@ -158,7 +165,7 @@ async def trigger_ai_analysis(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"Video file '{filename}' not found")
 
-    job = analysis_manager.start_analysis(camera_id, file_path, max_frames=max_frames)
+    job = analysis_manager.start_analysis(camera_id, file_path, mode=resolved_mode, max_frames=max_frames)
     return job
 
 

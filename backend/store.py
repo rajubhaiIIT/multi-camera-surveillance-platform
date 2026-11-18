@@ -50,6 +50,7 @@ class DataStore:
             hls_url=f"{settings.mediamtx_hls_base}/cam1/index.m3u8",
             video_url="/api/cameras/cam1/video",
             source_type="video_file",
+            camera_type="general",
             location="Building A - Main Entrance",
             fps=30.0,
             status=CameraStatus.ONLINE,
@@ -63,14 +64,32 @@ class DataStore:
             hls_url=f"{settings.mediamtx_hls_base}/cam2/index.m3u8",
             video_url=None,
             source_type="rtsp",
+            camera_type="general",
             location="Perimeter - South Gate",
+            fps=30.0,
+            status=CameraStatus.ONLINE,
+            is_active=True,
+        )
+        cam_traffic = CameraResponse(
+            id="cam_traffic",
+            name="Expressway Traffic & ANPR",
+            rtsp_url=f"{settings.mediamtx_rtsp_base}/cam_traffic",
+            webrtc_url=f"{settings.mediamtx_webrtc_base}/cam_traffic",
+            hls_url=f"{settings.mediamtx_hls_base}/cam_traffic/index.m3u8",
+            video_url="/api/cameras/cam_traffic/video",
+            source_type="video_file",
+            camera_type="traffic",
+            location="Highway Corridor - Zone 4",
             fps=30.0,
             status=CameraStatus.ONLINE,
             is_active=True,
         )
         self.cameras[cam1.id] = cam1
         self.cameras[cam2.id] = cam2
+        self.cameras[cam_traffic.id] = cam_traffic
         self.camera_videos["cam1"] = "sample.mp4"
+        self.camera_videos["cam_traffic"] = "final_indian_plates.mp4"
+        self.camera_zones["cam_traffic"] = [[0.05, 0.44], [0.95, 0.44], [0.98, 0.58], [0.02, 0.58]]
 
         # Seed sample alerts
         now = time.time()

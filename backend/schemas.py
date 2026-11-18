@@ -59,6 +59,7 @@ class CameraBase(BaseModel):
     fps: float = 30.0
     is_active: bool = True
     source_type: str = "rtsp"  # "rtsp" or "video_file"
+    camera_type: str = "general"  # "general" or "traffic"
     video_url: str | None = None
 
 
@@ -74,6 +75,7 @@ class CameraUpdate(BaseModel):
     fps: float | None = None
     is_active: bool | None = None
     source_type: str | None = None
+    camera_type: str | None = None
     video_url: str | None = None
 
 

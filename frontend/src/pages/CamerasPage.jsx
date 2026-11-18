@@ -110,7 +110,7 @@ export default function CamerasPage() {
           total_frames: 0,
         },
       }));
-      const job = await triggerAIAnalysis(camId);
+      const job = await triggerAIAnalysis(camId, null, 'general');
       if (job) {
         setAnalysisStatuses(prev => ({ ...prev, [camId]: job }));
       }

@@ -61,7 +61,13 @@ export const getCameraZone = (id) => request('GET', `/cameras/${id}/zone`);
 export const setCameraZone = (id, zone) => request('POST', `/cameras/${id}/zone`, { zone });
 export const getAvailableVideos = () => request('GET', '/cameras/available_videos');
 export const attachVideoToCamera = (id, filename) => request('POST', `/cameras/${id}/attach_video`, { filename });
-export const triggerAIAnalysis = (id, maxFrames) => request('POST', `/cameras/${id}/analyze${maxFrames ? `?max_frames=${maxFrames}` : ''}`);
+export const triggerAIAnalysis = (id, maxFrames, mode) => {
+  const qs = new URLSearchParams();
+  if (maxFrames) qs.set('max_frames', maxFrames);
+  if (mode) qs.set('mode', mode);
+  const qStr = qs.toString() ? `?${qs.toString()}` : '';
+  return request('POST', `/cameras/${id}/analyze${qStr}`);
+};
 export const getAIAnalysisStatus = (id) => request('GET', `/cameras/${id}/analysis_status`);
 export const stopAIAnalysis = (id) => request('POST', `/cameras/${id}/stop_analysis`);
 

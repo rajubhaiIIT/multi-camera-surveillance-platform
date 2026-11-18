@@ -23,6 +23,9 @@ import {
   setCameraZone,
   getAvailableVideos,
   attachVideoToCamera,
+  triggerAIAnalysis,
+  getAIAnalysisStatus,
+  stopAIAnalysis,
   getUser,
 } from '../api.js';
 import { useWebSocket } from '../useWebSocket.js';
@@ -40,6 +43,7 @@ export default function TrafficANPRPage() {
   const [selectedCamId, setSelectedCamId] = useState('');
   const [availableVideos, setAvailableVideos] = useState([]);
   const [feedMode, setFeedMode] = useState('stream'); // 'stream' or 'video'
+  const [aiStatus, setAiStatus] = useState(null);
 
   // Zone configuration state
   const [isEditingZone, setIsEditingZone] = useState(false);
@@ -116,9 +120,11 @@ export default function TrafficANPRPage() {
       if (Array.isArray(cams) && cams.length > 0) {
         setCameras(cams);
         if (!selectedCamId) {
-          // Prefer camera with active video or cam1
-          const withVid = cams.find(c => c.video_url || c.source_type === 'video_file') || cams[0];
-          setSelectedCamId(withVid.id);
+          // Prefer dedicated traffic camera (cam_traffic) or camera with traffic in type/id
+          const trafficCam = cams.find(c => c.camera_type === 'traffic' || c.id === 'cam_traffic' || c.id.toLowerCase().includes('traffic'))
+            || cams.find(c => c.video_url || c.source_type === 'video_file')
+            || cams[0];
+          setSelectedCamId(trafficCam.id);
         }
       }
     } catch (_) {}
@@ -228,13 +234,57 @@ export default function TrafficANPRPage() {
     setZonePoints(DEFAULT_ZONE);
   };
 
+  // Poll active AI status for selected camera
+  useEffect(() => {
+    if (!selectedCamId) return;
+    let cancelled = false;
+    const checkStatus = async () => {
+      try {
+        const st = await getAIAnalysisStatus(selectedCamId);
+        if (!cancelled && st) setAiStatus(st);
+      } catch (_) {}
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [selectedCamId]);
+
+  // Start traffic AI inference (strictly vehicles & ANPR, no violence/fall)
+  const handleStartTrafficAI = async () => {
+    if (!selectedCamId) return;
+    try {
+      showToast('Warming up Traffic AI (vehicle detection & ANPR only)...', 'info');
+      const job = await triggerAIAnalysis(selectedCamId, null, 'traffic');
+      setAiStatus(job);
+      showToast('Traffic ANPR active! Monitoring zone online.', 'success');
+    } catch (err) {
+      alert(`Start error: ${err.message}`);
+    }
+  };
+
+  // Stop traffic AI inference
+  const handleStopTrafficAI = async () => {
+    if (!selectedCamId) return;
+    try {
+      await stopAIAnalysis(selectedCamId);
+      setAiStatus(prev => ({ ...prev, status: 'stopped' }));
+      showToast('Traffic AI stopped.', 'info');
+    } catch (err) {
+      alert(`Stop error: ${err.message}`);
+    }
+  };
+
   // Quick attach video helper
   const handleAttachVideo = async (filename) => {
     if (!selectedCamId || !filename) return;
     try {
       await attachVideoToCamera(selectedCamId, filename);
+      await triggerAIAnalysis(selectedCamId, null, 'traffic');
       loadData();
-      showToast(`Attached [${filename}] to ${selectedCamId}. Stream warming up.`, 'success');
+      showToast(`Attached [${filename}] and activated Traffic ANPR.`, 'success');
     } catch (err) {
       alert(`Attach error: ${err.message}`);
     }
@@ -383,6 +433,46 @@ export default function TrafficANPRPage() {
                 </option>
               ))}
             </select>
+          )}
+
+          {/* AI Perception Status & Start/Stop Controls */}
+          {aiStatus?.status === 'running' || aiStatus?.status === 'live' ? (
+            <button
+              className="btn btn-sm btn-outline"
+              style={{
+                padding: '4px 10px',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#f87171',
+                borderColor: '#ef4444',
+                background: 'rgba(239, 68, 68, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+              onClick={handleStopTrafficAI}
+              title="Stop background AI inference"
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+              Stop AI
+            </button>
+          ) : (
+            <button
+              className="btn btn-sm btn-success"
+              style={{
+                padding: '4px 10px',
+                fontSize: 11,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+              onClick={handleStartTrafficAI}
+              title="Start Traffic AI (strictly vehicles and stolen plate search)"
+            >
+              <Zap size={13} />
+              Start Traffic AI
+            </button>
           )}
 
           {/* Edit Monitoring Zone Toggle Button */}
