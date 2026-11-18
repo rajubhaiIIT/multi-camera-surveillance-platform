@@ -8,6 +8,7 @@ Emits real-time tracking events and security alerts over WebSockets directly to 
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 import threading
 import time
@@ -54,7 +55,16 @@ class VideoAnalysisManager:
         self._stop_flags: Dict[str, threading.Event] = {}
         self._threads: Dict[str, threading.Thread] = {}
         self._latest_frames: Dict[str, bytes] = {}
+        self.zones: Dict[str, list[list[float]]] = {}
         self._lock = threading.Lock()
+
+    def set_monitoring_zone(self, camera_id: str, zone: list[list[float]]):
+        with self._lock:
+            self.zones[camera_id] = zone
+
+    def get_monitoring_zone(self, camera_id: str) -> Optional[list[list[float]]]:
+        with self._lock:
+            return self.zones.get(camera_id)
 
     def set_latest_frame(self, camera_id: str, jpeg_bytes: bytes):
         with self._lock:
@@ -425,51 +435,116 @@ class VideoAnalysisManager:
                     except Exception as w_err:
                         logger.debug("Weapon processing error: %s", w_err)
 
-                # 3b. Vehicle License Plate Recognition & Hotlist Matching
-                if plate_reader is not None and tracks:
+                # 3b. Vehicle License Plate Recognition & Hotlist Matching (Zone-Triggered)
+                zone_norm = self.get_monitoring_zone(camera_id) or store.get_camera_zone(camera_id)
+                if not zone_norm:
+                    zone_norm = [[0.05, 0.44], [0.95, 0.44], [0.98, 0.56], [0.02, 0.56]]
+
+                h_f, w_f = frame.shape[:2]
+                zone_pts = np.array([[int(p[0] * w_f), int(p[1] * h_f)] for p in zone_norm], dtype=np.int32)
+
+                vehicles_in_zone = 0
+                tracks_in_zone = set()
+
+                if tracks:
                     for t in tracks:
                         if t.cls in ("car", "motorcycle", "bus", "truck", "vehicle"):
-                            existing = track_plates.get(t.track_id)
-                            should_scan = (existing is None) or (frame_idx % 20 == 0 and existing.get("conf", 0) < 0.90)
-                            if should_scan:
-                                try:
-                                    prec = plate_reader.process_vehicle(frame, t.bbox)
-                                    if prec and prec.text:
-                                        is_match = watchlist.match(prec.text) if watchlist else None
-                                        is_hotlist = is_match is not None
-                                        reason = is_match.reason if is_match else ""
-                                        track_plates[t.track_id] = {
-                                            "plate": prec.text,
-                                            "conf": prec.confidence,
-                                            "format": prec.country_format,
-                                            "is_hotlist": is_hotlist,
-                                            "reason": reason,
-                                            "bbox": prec.bbox,
-                                        }
+                            bx1, by1, bx2, by2 = [int(v) for v in t.bbox]
+                            vx = (bx1 + bx2) / 2.0
+                            vy = float(by2)
+                            # Check if vehicle bottom or center intersects user-defined zone
+                            in_z = (cv2.pointPolygonTest(zone_pts, (vx, vy), False) >= 0 or
+                                    cv2.pointPolygonTest(zone_pts, (vx, (by1 + by2) / 2.0), False) >= 0)
+                            if in_z:
+                                vehicles_in_zone += 1
+                                tracks_in_zone.add(t.track_id)
 
-                                        if is_hotlist:
-                                            alert_key = ("watchlist_plate", camera_id, t.track_id, prec.text)
-                                            if now_wall - last_alert_time.get(alert_key, 0) > 8.0:
-                                                last_alert_time[alert_key] = now_wall
-                                                alert_in = AlertCreate(
-                                                    camera_id=camera_id,
-                                                    alert_type=AlertType.WATCHLIST_PLATE,
-                                                    severity=AlertSeverity.CRITICAL,
-                                                    title=f"WATCHLIST HIT: {prec.text} on {camera_id}",
-                                                    description=f"Hotlisted vehicle ({reason}) detected: plate [{prec.text}] with {int(prec.confidence * 100)}% confidence.",
-                                                    bbox=list(t.bbox),
-                                                    track_id=t.track_id,
-                                                    metadata={"plate": prec.text, "reason": reason, "conf": float(prec.confidence)},
-                                                )
-                                                created_alert = store.add_alert(alert_in)
-                                                alerts_count += 1
-                                                ws_manager.broadcast_alert_sync(created_alert.model_dump())
-                                                logger.warning("[AI ALERT] Watchlist Vehicle (%s) detected on %s!", prec.text, camera_id)
-                                except Exception as anpr_err:
-                                    logger.debug("ANPR scan error on %s: %s", camera_id, anpr_err)
+                                if plate_reader is not None:
+                                    existing = track_plates.get(t.track_id)
+                                    should_scan = (existing is None) or (frame_idx % 12 == 0 and existing.get("conf", 0) < 0.90)
+                                    if should_scan:
+                                        try:
+                                            prec = plate_reader.process_vehicle(frame, t.bbox)
+                                            if prec and prec.text:
+                                                is_match = watchlist.match(prec.text) if watchlist else None
+                                                is_hotlist = is_match is not None
+                                                reason = is_match.reason if is_match else ""
+
+                                                # Extract high-resolution cropped plate image for dashboard Zoom window
+                                                px1, py1, px2, py2 = [int(v) for v in prec.bbox]
+                                                px1, py1 = max(0, px1 - 6), max(0, py1 - 6)
+                                                px2, py2 = min(w_f - 1, px2 + 6), min(h_f - 1, py2 + 6)
+                                                if px2 > px1 and py2 > py1:
+                                                    p_crop = frame[py1:py2, px1:px2]
+                                                else:
+                                                    p_crop = frame[max(0, by1):min(h_f - 1, by2), max(0, bx1):min(w_f - 1, bx2)]
+
+                                                ret_p, buf_p = cv2.imencode(".jpg", p_crop, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                                                crop_b64 = "data:image/jpeg;base64," + base64.b64encode(buf_p).decode("utf-8") if ret_p else ""
+
+                                                track_plates[t.track_id] = {
+                                                    "plate": prec.text,
+                                                    "conf": prec.confidence,
+                                                    "format": prec.country_format,
+                                                    "is_hotlist": is_hotlist,
+                                                    "reason": reason,
+                                                    "crop": crop_b64,
+                                                    "timestamp": now_wall,
+                                                }
+
+                                                # Emit real-time ANPR detection packet to web clients
+                                                anpr_packet = {
+                                                    "type": "anpr_detection",
+                                                    "camera_id": camera_id,
+                                                    "track_id": t.track_id,
+                                                    "plate": prec.text,
+                                                    "confidence": round(float(prec.confidence) * 100, 1),
+                                                    "country_format": prec.country_format,
+                                                    "plate_crop": crop_b64,
+                                                    "is_hotlist": is_hotlist,
+                                                    "reason": reason,
+                                                    "vehicle_type": t.cls,
+                                                    "timestamp": now_wall,
+                                                    "vehicles_in_zone": vehicles_in_zone,
+                                                }
+                                                ws_manager.broadcast_sync(anpr_packet)
+
+                                                if is_hotlist:
+                                                    alert_key = ("watchlist_plate", camera_id, t.track_id, prec.text)
+                                                    if now_wall - last_alert_time.get(alert_key, 0) > 8.0:
+                                                        last_alert_time[alert_key] = now_wall
+                                                        alert_in = AlertCreate(
+                                                            camera_id=camera_id,
+                                                            alert_type=AlertType.WATCHLIST_PLATE,
+                                                            severity=AlertSeverity.CRITICAL,
+                                                            title=f"WATCHLIST HIT: {prec.text} on {camera_id}",
+                                                            description=f"Hotlisted vehicle ({reason}) detected in monitoring zone: plate [{prec.text}] with {int(prec.confidence * 100)}% confidence.",
+                                                            bbox=list(t.bbox),
+                                                            track_id=t.track_id,
+                                                            metadata={"plate": prec.text, "reason": reason, "conf": float(prec.confidence)},
+                                                        )
+                                                        created_alert = store.add_alert(alert_in)
+                                                        alerts_count += 1
+                                                        ws_manager.broadcast_alert_sync(created_alert.model_dump())
+                                                        logger.warning("[AI ALERT] Watchlist Vehicle (%s) detected in zone on %s!", prec.text, camera_id)
+                                        except Exception as anpr_err:
+                                            logger.debug("ANPR scan error on %s: %s", camera_id, anpr_err)
 
                 # 4. Generate visual perception frame with bounding boxes and Person IDs
                 vis = frame.copy()
+
+                # Render user-defined Monitoring Zone overlay (cyan polygon + label)
+                try:
+                    zone_overlay = vis.copy()
+                    cv2.fillPoly(zone_overlay, [zone_pts], (235, 160, 45))
+                    cv2.addWeighted(zone_overlay, 0.22, vis, 0.78, 0, vis)
+                    cv2.polylines(vis, [zone_pts], isClosed=True, color=(255, 190, 60), thickness=2)
+                    lbl_x = max(10, int(zone_pts[3][0] if len(zone_pts) > 3 else zone_pts[0][0]))
+                    lbl_y = min(h_f - 10, int(zone_pts[3][1] if len(zone_pts) > 3 else zone_pts[0][1]) + 18)
+                    cv2.putText(vis, "MONITORING ZONE", (lbl_x, lbl_y), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 200, 70), 1, cv2.LINE_AA)
+                except Exception:
+                    pass
+
                 if pose_detector is not None and tracked_poses:
                     try:
                         vis = pose_detector.draw(vis, tracked_poses)
@@ -487,54 +562,39 @@ class VideoAnalysisManager:
                             continue
 
                         ident = t.global_id if t.global_id is not None else t.track_id
-                        color = _color_for_id(ident)
                         rendered_tids.add(t.track_id)
 
                         is_veh = t.cls in ("car", "motorcycle", "bus", "truck", "vehicle")
                         p_info = track_plates.get(t.track_id) if is_veh else None
                         is_hotlist = p_info and p_info.get("is_hotlist")
+                        is_in_zone = t.track_id in tracks_in_zone
 
-                        # If hotlist vehicle, color bright red
-                        if is_hotlist:
-                            color = (0, 0, 235)
+                        # Vehicle styling: cyber cyan/blue or hotlist red
+                        if is_veh:
+                            color = (0, 0, 235) if is_hotlist else (255, 180, 50)
+                            label = "VEHICLE"
+                            if is_hotlist:
+                                label = f"HOTLIST: {p_info['plate']} \u26A0"
+                        else:
+                            color = _color_for_id(ident)
+                            label = f"Person #{t.track_id}"
+                            if t.global_id is not None:
+                                label = f"P{t.global_id} (#{t.track_id})"
 
                         # Draw vehicle / object bounding box
                         cv2.rectangle(vis, (x1, y1), (x2, y2), color, 2 if not is_hotlist else 3)
 
                         # Header label pill
-                        label = f"Person #{t.track_id}"
-                        if t.global_id is not None:
-                            label = f"P{t.global_id} (#{t.track_id})"
-                        elif is_veh:
-                            label = f"{t.cls.capitalize()} #{t.track_id}"
-                            if is_hotlist:
-                                label = f"HOTLIST: {p_info['plate']} \u26A0"
-
-                        if hasattr(t, "conf") and t.conf and not is_hotlist:
-                            label += f" {int(t.conf * 100)}%"
-
-                        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.52, 1)
-                        tag_y1 = max(0, y1 - th - 8)
-                        tag_y2 = max(th + 8, y1)
+                        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
+                        tag_y1 = max(0, y1 - th - 6)
+                        tag_y2 = max(th + 6, y1)
                         cv2.rectangle(vis, (x1, tag_y1), (x1 + tw + 6, tag_y2), color, -1)
-                        cv2.putText(vis, label, (x1 + 3, tag_y2 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(vis, label, (x1 + 3, tag_y2 - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (255, 255, 255), 1, cv2.LINE_AA)
 
-                        # License Plate pill at bottom/bumper of vehicle
-                        if p_info and p_info.get("plate"):
-                            plate_txt = p_info["plate"]
-                            plate_pill = f"IND {plate_txt}"
-                            (pw, ph), _ = cv2.getTextSize(plate_pill, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
-                            py1_b = min(frame.shape[0] - ph - 10, y2 + 4)
-                            py2_b = py1_b + ph + 8
-                            px1_b = max(0, x1 + (x2 - x1 - pw - 18) // 2)
-                            px2_b = min(frame.shape[1] - 1, px1_b + pw + 18)
-
-                            cv2.rectangle(vis, (px1_b, py1_b), (px2_b, py2_b), (250, 250, 250), -1)
-                            cv2.rectangle(vis, (px1_b, py1_b), (px2_b, py2_b), (15, 15, 15), 2)
-                            # Blue registration country strip on left
-                            cv2.rectangle(vis, (px1_b, py1_b), (px1_b + 14, py2_b), (210, 70, 20), -1)
-                            # Bold plate characters
-                            cv2.putText(vis, plate_pill, (px1_b + 18, py2_b - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (10, 10, 15), 2, cv2.LINE_AA)
+                        # If vehicle is in monitoring zone, draw vertical tracking crosshair guideline
+                        if is_veh and is_in_zone:
+                            cx = int((x1 + x2) / 2)
+                            cv2.line(vis, (cx, max(0, y1 - 35)), (cx, int(y1)), color, 1)
 
                 # Render tracked poses that were not matched to YOLO tracks
                 if tracked_poses:

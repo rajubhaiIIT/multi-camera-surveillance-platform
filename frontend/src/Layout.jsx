@@ -9,6 +9,7 @@ import {
   Bell,
   Activity,
   Car,
+  Radio,
   LogOut,
   X,
   Volume2,
@@ -60,6 +61,7 @@ export default function Layout() {
   const navItems = [
     { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
     { to: '/cameras', icon: <Camera size={18} />, label: 'Cameras' },
+    { to: '/traffic', icon: <Radio size={18} />, label: 'Traffic ANPR', badge: 'ZONE' },
     { to: '/alerts', icon: <Bell size={18} />, label: 'Alerts' },
     { to: '/events', icon: <Activity size={18} />, label: 'Events' },
     { to: '/watchlist', icon: <Car size={18} />, label: 'Vehicle Watchlist' },

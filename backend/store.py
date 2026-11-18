@@ -32,6 +32,7 @@ class DataStore:
     def __init__(self):
         self.cameras: dict[str, CameraResponse] = {}
         self.camera_videos: dict[str, str] = {}
+        self.camera_zones: dict[str, list[list[float]]] = {}
         self.alerts: dict[str, AlertResponse] = {}
         self.events: list[EventResponse] = []
         self.watchlist: dict[str, WatchlistPlateResponse] = {}
@@ -212,8 +213,15 @@ class DataStore:
         if camera_id in self.cameras:
             del self.cameras[camera_id]
             self.camera_videos.pop(camera_id, None)
+            self.camera_zones.pop(camera_id, None)
             return True
         return False
+
+    def set_camera_zone(self, camera_id: str, zone: list[list[float]]):
+        self.camera_zones[camera_id] = zone
+
+    def get_camera_zone(self, camera_id: str) -> list[list[float]] | None:
+        return self.camera_zones.get(camera_id)
 
     # ---------------------------------------------------------------- Alerts
     def list_alerts(

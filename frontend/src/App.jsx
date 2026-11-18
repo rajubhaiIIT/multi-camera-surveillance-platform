@@ -8,6 +8,7 @@ import CamerasPage from './pages/CamerasPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';
 import EventsPage from './pages/EventsPage.jsx';
 import WatchlistPage from './pages/WatchlistPage.jsx';
+import TrafficANPRPage from './pages/TrafficANPRPage.jsx';
 
 function ProtectedRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to="/login" replace />;
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="watchlist" element={<WatchlistPage />} />
+          <Route path="traffic" element={<TrafficANPRPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

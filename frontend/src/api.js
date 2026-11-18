@@ -57,6 +57,8 @@ export const createCamera = (data) => request('POST', '/cameras', data);
 export const updateCamera = (id, data) => request('PUT', `/cameras/${id}`, data);
 export const deleteCamera = (id) => request('DELETE', `/cameras/${id}`);
 export const getCameraStreams = (id) => request('GET', `/cameras/${id}/streams`);
+export const getCameraZone = (id) => request('GET', `/cameras/${id}/zone`);
+export const setCameraZone = (id, zone) => request('POST', `/cameras/${id}/zone`, { zone });
 export const getAvailableVideos = () => request('GET', '/cameras/available_videos');
 export const attachVideoToCamera = (id, filename) => request('POST', `/cameras/${id}/attach_video`, { filename });
 export const triggerAIAnalysis = (id, maxFrames) => request('POST', `/cameras/${id}/analyze${maxFrames ? `?max_frames=${maxFrames}` : ''}`);

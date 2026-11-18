@@ -24,6 +24,10 @@ class AttachVideoRequest(BaseModel):
     filename: str
 
 
+class ZoneUpdateRequest(BaseModel):
+    zone: list[list[float]]
+
+
 @router.get("", response_model=list[CameraResponse])
 async def list_cameras(current_user: Annotated[UserResponse, Depends(get_current_user)]):
     return store.list_cameras()
@@ -110,6 +114,24 @@ async def attach_video(camera_id: str, payload: AttachVideoRequest):
     except Exception:
         pass
     return updated
+
+
+@router.get("/{camera_id}/zone")
+async def get_camera_zone(camera_id: str):
+    """Get the active user-defined plate detection monitoring zone for this camera."""
+    zone = store.get_camera_zone(camera_id)
+    if not zone:
+        # Default road trapezoid: top-left, top-right, bottom-right, bottom-left (normalized 0.0-1.0)
+        zone = [[0.05, 0.44], [0.95, 0.44], [0.98, 0.56], [0.02, 0.56]]
+    return {"camera_id": camera_id, "zone": zone}
+
+
+@router.post("/{camera_id}/zone")
+async def set_camera_zone(camera_id: str, payload: ZoneUpdateRequest):
+    """Update user-defined plate detection monitoring zone."""
+    store.set_camera_zone(camera_id, payload.zone)
+    analysis_manager.set_monitoring_zone(camera_id, payload.zone)
+    return {"camera_id": camera_id, "zone": payload.zone, "status": "updated"}
 
 
 @router.post("/{camera_id}/analyze", dependencies=[Depends(require_role([UserRole.ADMIN, UserRole.OPERATOR]))])
