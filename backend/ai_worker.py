@@ -276,6 +276,8 @@ class VideoAnalysisManager:
         plate_reader = None
         watchlist = None
         track_plates: Dict[int, dict] = {}
+        camera_plate_sightings: Dict[str, float] = {}
+        track_recorded_plates: Dict[int, str] = {}
 
         try:
             from ai.vehicles.anpr import LicensePlateReader
@@ -520,11 +522,23 @@ class VideoAnalysisManager:
                                             plate_reader.set_engine(target_eng)
 
                                         existing = track_plates.get(t.track_id)
-                                        should_scan = (existing is None) or (frame_idx % 8 == 0 and existing.get("conf", 0) < 0.90)
+                                        # Only scan unread vehicles or re-verify low-confidence reads
+                                        should_scan = (existing is None) or (frame_idx % 8 == 0 and existing.get("conf", 0) < 0.88)
                                         if should_scan:
                                             try:
                                                 prec = plate_reader.process_vehicle(frame, t.bbox)
                                                 if prec and prec.text:
+                                                    clean_p = prec.text.upper().replace(" ", "").replace("-", "").replace(".", "")
+
+                                                    # Deduplication: check if already counted for this track or seen recently (< 14s)
+                                                    already_for_track = (track_recorded_plates.get(t.track_id) == clean_p)
+                                                    last_seen_time = camera_plate_sightings.get(clean_p, 0.0)
+                                                    recently_seen = (now_wall - last_seen_time < 14.0)
+
+                                                    is_new_capture = (not already_for_track) and (not recently_seen)
+                                                    camera_plate_sightings[clean_p] = now_wall
+                                                    track_recorded_plates[t.track_id] = clean_p
+
                                                     is_match = watchlist.match(prec.text) if watchlist else None
                                                     is_hotlist = is_match is not None
                                                     reason = is_match.reason if is_match else ""
@@ -541,14 +555,17 @@ class VideoAnalysisManager:
                                                     ret_p, buf_p = cv2.imencode(".jpg", p_crop, [cv2.IMWRITE_JPEG_QUALITY, 85])
                                                     crop_b64 = "data:image/jpeg;base64," + base64.b64encode(buf_p).decode("utf-8") if ret_p else ""
 
+                                                    best_conf = max(prec.confidence, existing.get("conf", 0.0) if existing else 0.0)
+
                                                     track_plates[t.track_id] = {
                                                         "plate": prec.text,
-                                                        "conf": prec.confidence,
+                                                        "conf": best_conf,
                                                         "format": prec.country_format,
                                                         "is_hotlist": is_hotlist,
                                                         "reason": reason,
                                                         "crop": crop_b64,
                                                         "timestamp": now_wall,
+                                                        "is_new": is_new_capture,
                                                     }
 
                                                     # Emit real-time ANPR detection packet to web clients
@@ -557,7 +574,7 @@ class VideoAnalysisManager:
                                                         "camera_id": camera_id,
                                                         "track_id": t.track_id,
                                                         "plate": prec.text,
-                                                        "confidence": round(float(prec.confidence) * 100, 1),
+                                                        "confidence": round(float(best_conf) * 100, 1),
                                                         "country_format": prec.country_format,
                                                         "plate_crop": crop_b64,
                                                         "is_hotlist": is_hotlist,
@@ -565,10 +582,11 @@ class VideoAnalysisManager:
                                                         "vehicle_type": t.cls,
                                                         "timestamp": now_wall,
                                                         "vehicles_in_zone": vehicles_in_zone,
+                                                        "is_new": is_new_capture,
                                                     }
                                                     ws_manager.broadcast_sync(anpr_packet)
 
-                                                    if is_hotlist:
+                                                    if is_hotlist and is_new_capture:
                                                         alert_key = ("watchlist_plate", camera_id, t.track_id, prec.text)
                                                         if now_wall - last_alert_time.get(alert_key, 0) > 8.0:
                                                             last_alert_time[alert_key] = now_wall
@@ -577,10 +595,10 @@ class VideoAnalysisManager:
                                                                 alert_type=AlertType.WATCHLIST_PLATE,
                                                                 severity=AlertSeverity.CRITICAL,
                                                                 title=f"WATCHLIST HIT: {prec.text} on {camera_id}",
-                                                                description=f"Hotlisted vehicle ({reason}) detected in monitoring zone: plate [{prec.text}] with {int(prec.confidence * 100)}% confidence.",
+                                                                description=f"Hotlisted vehicle ({reason}) detected in monitoring zone: plate [{prec.text}] with {int(best_conf * 100)}% confidence.",
                                                                 bbox=list(t.bbox),
                                                                 track_id=t.track_id,
-                                                                metadata={"plate": prec.text, "reason": reason, "conf": float(prec.confidence)},
+                                                                metadata={"plate": prec.text, "reason": reason, "conf": float(best_conf)},
                                                             )
                                                             created_alert = store.add_alert(alert_in)
                                                             alerts_count += 1
@@ -599,8 +617,8 @@ class VideoAnalysisManager:
                                                         })
                                             except Exception as anpr_err:
                                                 logger.debug("ANPR scan error on %s: %s", camera_id, anpr_err)
-                                        elif existing and existing.get("plate") and (frame_idx % 15 == 0):
-                                            # Keep-alive detection update while vehicle remains inside zone
+                                        elif existing and existing.get("plate") and (frame_idx % 20 == 0):
+                                            # Keep-alive detection update while vehicle remains inside zone (not a new capture)
                                             ws_manager.broadcast_sync({
                                                 "type": "anpr_detection",
                                                 "camera_id": camera_id,
@@ -614,6 +632,7 @@ class VideoAnalysisManager:
                                                 "vehicle_type": t.cls,
                                                 "timestamp": now_wall,
                                                 "vehicles_in_zone": vehicles_in_zone,
+                                                "is_new": False,
                                             })
 
                     # Broadcast active vehicles count in zone every 4 frames

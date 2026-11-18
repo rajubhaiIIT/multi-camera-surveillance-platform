@@ -61,9 +61,9 @@ export default function TrafficANPRPage() {
   const [isSavingZone, setIsSavingZone] = useState(false);
   const [activeHandle, setActiveHandle] = useState(null);
 
-  // ANPR Live Dashboard State
-  const [kpiPlates, setKpiPlates] = useState(27);
-  const [kpiNoRead, setKpiNoRead] = useState(2);
+  // ANPR Live Dashboard State (Deduplicated Unique Counts)
+  const [kpiPlates, setKpiPlates] = useState(4);
+  const [kpiNoRead, setKpiNoRead] = useState(0);
   const [kpiVehicles, setKpiVehicles] = useState(0);
 
   // Current Plate Zoom Window
@@ -122,6 +122,7 @@ export default function TrafficANPRPage() {
   const [notification, setNotification] = useState(null);
   const [anprEngine, setAnprEngineState] = useState('cct_s');
   const videoViewportRef = useRef(null);
+  const seenPlatesRef = useRef(new Map());
   const user = getUser();
 
   // Load ONLY traffic cameras, available sample videos, and active ANPR engine
@@ -200,48 +201,84 @@ export default function TrafficANPRPage() {
     } else if (msg.type === 'anpr_no_read' && matchesCam) {
       setKpiNoRead(c => c + 1);
     } else if (msg.type === 'anpr_detection' && matchesCam) {
-      const { plate, confidence, country_format, plate_crop, is_hotlist, reason, vehicle_type, vehicles_in_zone } = msg;
+      const { plate, confidence, country_format, plate_crop, is_hotlist, reason, vehicle_type, vehicles_in_zone, is_new } = msg;
 
       if (typeof vehicles_in_zone === 'number') {
         setKpiVehicles(vehicles_in_zone);
       }
 
+      if (!plate || plate === 'UNKNOWN') return;
+
       const confNum = Math.round(confidence || 75);
       const isHot = !!is_hotlist;
+      const cleanPlate = plate.toUpperCase().replace(/[\s\-\.]/g, '');
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const nowMs = Date.now();
 
-      // Update current Plate Zoom widget
+      // Deduplication: check if this plate was already detected within the last 14 seconds or flagged by backend as not new
+      const lastSeen = seenPlatesRef.current.get(cleanPlate) || 0;
+      const isDuplicate = (is_new === false) || (nowMs - lastSeen < 14000);
+
+      // Update recent sighting timestamp
+      seenPlatesRef.current.set(cleanPlate, nowMs);
+
+      // Update current Plate Zoom widget (live lens on active vehicle)
       setCurrentPlate(prev => ({
-        plate: plate || 'UNKNOWN',
+        plate: plate,
         confidence: confNum,
         status: isHot ? 'HOTLIST' : confNum > 80 ? 'CONFIRMED' : 'READING',
-        reads: (prev.plate === plate ? prev.reads + 1 : 1),
+        reads: (prev.plate === plate ? (prev.reads || 1) + 1 : 1),
         crop: plate_crop || prev.crop,
         vehicleType: (vehicle_type || 'VEHICLE').toUpperCase(),
         isHotlist: isHot,
         reason: reason || '',
       }));
 
-      // Increment counters
-      setKpiPlates(c => c + 1);
+      if (isDuplicate) {
+        // Vehicle is lingering or driving across region: update confidence and read count in-place, DO NOT add duplicate row or count
+        setRecentPlates(prev => {
+          let found = false;
+          const updated = prev.map(rec => {
+            const recClean = (rec.plate || '').toUpperCase().replace(/[\s\-\.]/g, '');
+            if (recClean === cleanPlate) {
+              found = true;
+              return {
+                ...rec,
+                confidence: Math.max(rec.confidence, confNum),
+                crop: plate_crop || rec.crop,
+                reads: (rec.reads || 1) + 1,
+                time: timeStr,
+              };
+            }
+            return rec;
+          });
+          return found ? updated : prev;
+        });
+      } else {
+        // Brand new vehicle entry: increment unique plate counter ONCE and prepend to recent plates
+        setKpiPlates(c => c + 1);
 
-      // Prepend to Recent Plates list
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      const newRec = {
-        id: `anpr-${Date.now()}-${Math.random()}`,
-        plate: plate || 'UNKNOWN',
-        vehicleType: (vehicle_type || 'VEHICLE').toUpperCase(),
-        time: timeStr,
-        confidence: confNum,
-        crop: plate_crop || null,
-        isHotlist: isHot,
-        reason: reason || '',
-      };
+        const newRec = {
+          id: `anpr-${Date.now()}-${Math.random()}`,
+          plate: plate,
+          vehicleType: (vehicle_type || 'VEHICLE').toUpperCase(),
+          time: timeStr,
+          confidence: confNum,
+          crop: plate_crop || null,
+          isHotlist: isHot,
+          reason: reason || '',
+          reads: 1,
+        };
 
-      setRecentPlates(prev => [newRec, ...prev.slice(0, 19)]);
+        setRecentPlates(prev => [
+          newRec,
+          ...prev.filter(r => (r.plate || '').toUpperCase().replace(/[\s\-\.]/g, '') !== cleanPlate).slice(0, 19),
+        ]);
 
-      if (isHot) {
-        showToast(`🚨 HOTLIST DETECTED: [${plate}] matches stolen vehicle registry!`, 'critical');
+        if (isHot) {
+          showToast(`🚨 HOTLIST DETECTED: [${plate}] matches stolen vehicle registry!`, 'critical');
+        }
       }
     } else if (msg.type === 'alert' && msg.payload?.alert_type === 'watchlist_plate') {
       const p = msg.payload.metadata?.plate || 'STOLEN VEHICLE';
@@ -1385,6 +1422,11 @@ export default function TrafficANPRPage() {
 
                     <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontFamily: 'monospace' }}>
                       {item.vehicleType} &bull; {item.time} &bull; {item.confidence}%
+                      {item.reads && item.reads > 1 && (
+                        <span style={{ marginLeft: 6, color: '#38bdf8', fontWeight: 600 }}>
+                          ({item.reads} scans)
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
